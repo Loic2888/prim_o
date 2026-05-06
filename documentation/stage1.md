@@ -1,4 +1,4 @@
-# <span style="color:#00A19A;">STAGE 1: Team Formation, Brainstorming, and MVP</span>
+# STAGE 1: Team Formation, Brainstorming, and MVP
 
 ## Table of Contents
 1. [Team Formation and Organizational Structure](#0-team-formation-and-organizational-structure)
