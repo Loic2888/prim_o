@@ -1,6 +1,6 @@
 # Technical Documentation - PRIM'O MVP
 
-**PRIM'O** is a B2B2C SaaS platform enabling real-time meritocratic recognition in SMEs. Employers allocate tokens to employees, who exchange them for vouchers on an integrated marketplace. This document covers the full technical architecture of the MVP, serving as the primary reference for system design, API contracts, database structure, and QA practices.
+**PRIM'O** is a B2B2C(Business to Business to Consumer) SaaS(Software as a Service) platform enabling real-time meritocratic recognition in SMEs. Employers allocate tokens to employees, who exchange them for vouchers on an integrated marketplace. This document covers the full technical architecture of the MVP, serving as the primary reference for system design, API contracts, database structure, and QA practices.
 
 ---
 ## Table of Contents
