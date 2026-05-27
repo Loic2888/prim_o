@@ -3,6 +3,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
+const routes = require('./src/routes');
+const { errorHandler } = require('./src/middleware/errorHandler');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -17,6 +20,9 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.use('/api', routes);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
