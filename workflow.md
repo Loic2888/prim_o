@@ -29,6 +29,56 @@ git push -u origin dev
 
 ---
 
+### Branche `feature/init` — 2026-05-27 (fait par Loïc)
+
+Création de la branche depuis `dev` :
+```bash
+git checkout dev && git pull origin dev
+git checkout -b feature/init
+```
+
+**Initialisation du projet Node.js**
+- Ajout d'un `package.json` racine avec npm workspaces (`server`, `client`)
+- Scripts racine : `dev:server`, `dev:client`, `test:server`
+- `package-lock.json` tracké dans git (requis par `npm ci` en CI/CD)
+
+**Dépendances backend** (`server/`)
+- Dépendances production déjà présentes : `express`, `pg`, `bcrypt`, `jsonwebtoken`, `dotenv`, `cors`, `helmet`, `stripe`
+- Ajout : `express-validator`
+- Dépendances dev déjà présentes : `jest`, `nodemon`, `supertest`
+- Ajout : `eslint`, `prettier`, `eslint-config-prettier`, `@eslint/js`
+- Configuration ESLint flat config (v10) + Prettier — scripts `lint`, `lint:fix`, `format`
+- Configuration ESLint flat config (v10) + Prettier avec scripts `lint`, `lint:fix`, `format`
+
+**Dépendances frontend** (`client/`)
+- Ajout : `react-router-dom`, `axios`
+
+**Structure backend** (`server/src/`)
+- `routes/` : `index.js` + `auth`, `users`, `tokens`, `marketplace`
+- `controllers/` : stubs fins pour `auth`, `users`, `tokens`, `marketplace`
+- `services/` : stubs prêts à implémenter pour `auth`, `users`, `token`, `stripe`, `marketplace`
+- `middleware/` : `verifyToken.js`, `roleGuard.js`, `errorHandler.js`
+
+**Serveur Express** (`server/server.js`)
+- CORS restreint à `CLIENT_URL`
+- `express.raw()` monté sur `/api/tokens/webhook` avant `express.json()` (requis Stripe)
+- Limite payload à 10 kb
+- Handler 404 JSON
+- Arrêt gracieux sur SIGTERM / SIGINT
+
+**Fichiers d'environnement**
+- `server/.env` créé depuis `server/.env.example` (ajout de `CLIENT_URL`)
+- `client/.env` créé depuis `client/.env.example`
+- Les deux sont gitignorés — valeurs réelles à renseigner manuellement
+
+**Middleware `verifyToken`**
+- Vérification JWT avec algorithme forcé `HS256` (protection contre attaque `alg: none`)
+- Parsing strict du header `Authorization: Bearer <token>`
+- Erreurs typées : `TokenExpiredError` retourne un message distinct (utile pour le refresh flow)
+- 5 tests unitaires : token valide, header manquant, token malformé, token expiré, mauvais secret
+
+---
+
 ## Mise en place pour un nouveau développeur
 
 Commandes à lancer une seule fois après avoir cloné le projet :
