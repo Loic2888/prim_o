@@ -1,6 +1,5 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
 
 const BCRYPT_ROUNDS = 12;
 
@@ -18,11 +17,10 @@ const createAccessToken = (user) =>
   );
 
 const createRefreshToken = (user) =>
-  jwt.sign(
-    { id: user.id },
-    process.env.JWT_REFRESH_SECRET,
-    { algorithm: 'HS256', expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' }
-  );
+  jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, {
+    algorithm: 'HS256',
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+  });
 
 const safeUser = (user) => ({
   id: user.id,
@@ -35,6 +33,7 @@ const safeUser = (user) => ({
 });
 
 const register = async ({ name, first_name, email, password, role, company_id }) => {
+  const { User } = require('../models');
   const existing = await User.findOne({ where: { email } });
   if (existing) {
     throw httpError('Email already in use', 409);
@@ -60,6 +59,7 @@ const register = async ({ name, first_name, email, password, role, company_id })
 };
 
 const login = async ({ email, password }) => {
+  const { User } = require('../models');
   const user = await User.findOne({ where: { email } });
   if (!user) {
     throw httpError('Invalid credentials', 401);
@@ -82,6 +82,7 @@ const login = async ({ email, password }) => {
 const logout = async (_userId) => {};
 
 const getProfile = async (userId) => {
+  const { User } = require('../models');
   const user = await User.findByPk(userId, {
     attributes: { exclude: ['password_hash'] },
   });
@@ -92,6 +93,7 @@ const getProfile = async (userId) => {
 };
 
 const refreshToken = async (token) => {
+  const { User } = require('../models');
   if (!token) {
     throw httpError('Refresh token required', 400);
   }
@@ -100,7 +102,8 @@ const refreshToken = async (token) => {
   try {
     payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] });
   } catch (err) {
-    const msg = err.name === 'TokenExpiredError' ? 'Refresh token expired' : 'Invalid refresh token';
+    const msg =
+      err.name === 'TokenExpiredError' ? 'Refresh token expired' : 'Invalid refresh token';
     throw httpError(msg, 401);
   }
 
