@@ -13,6 +13,8 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./docker/postgres/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U primo -d primo_dev"]
       interval: 5s
@@ -63,6 +65,4 @@ services:
       - api
 
 volumes:
-  - postgres_data:/var/lib/postgresql/data
-  - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01_init.sql #  01 first
-  - ./docker/postgres/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql #  02 second
+  postgres_data:
