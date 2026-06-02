@@ -54,7 +54,7 @@ VALUES
 INSERT INTO vouchers (id, title, partner, token_cost, available, created_at, updated_at)
 VALUES
 (
-  'v1111111-1111-1111-1111-111111111111',
+  'a0111111-1111-1111-1111-111111111111',
   'Carte Cadeau Fnac 20€',
   'Fnac',
   100,
@@ -63,7 +63,7 @@ VALUES
   NOW()
 ),
 (
-  'v2222222-2222-2222-2222-222222222222',
+  'b0222222-2222-2222-2222-222222222222',
   'Bon d''achat Décathlon 50€',
   'Decathlon',
   250,
@@ -72,7 +72,7 @@ VALUES
   NOW()
 ),
 (
-  'v3333333-3333-3333-3333-333333333333',
+  'c0333333-3333-3333-3333-333333333333',
   'Abonnement Streaming 1 Mois',
   'Netflix',
   50,
@@ -85,7 +85,7 @@ VALUES
 -- type 'allocation' matches what token.service.js produces
 INSERT INTO token_transactions (id, company_id, sender_id, receiver_id, amount, type, stripe_payment_id, created_at, updated_at)
 VALUES (
-  't1111111-1111-1111-1111-111111111111',
+  'd0111111-1111-1111-1111-111111111111',
   'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
   '11111111-2222-3333-4444-555555555555',
   '66666666-7777-8888-9999-000000000000',
