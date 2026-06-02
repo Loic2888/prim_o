@@ -62,6 +62,8 @@ const createPaymentIntent = async (companyId, tokenAmount) => {
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amountInCents,
     currency: 'eur',
+    // Disable redirect-based methods so confirmation works server-side without return_url
+    automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
     metadata: {
       company_id: companyId,
       token_amount: tokenAmount,

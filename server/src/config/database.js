@@ -6,7 +6,7 @@ if (!process.env.DATABASE_URL) {
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  logging: process.env.NODE_ENV === 'development' ? console.log : false, // eslint-disable-line no-console
   pool: {
     max: 10,
     min: 2,

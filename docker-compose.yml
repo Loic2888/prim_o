@@ -37,8 +37,8 @@ services:
       JWT_EXPIRES_IN: 7d
       JWT_REFRESH_SECRET: dev_refresh_secret_change_in_production
       JWT_REFRESH_EXPIRES_IN: 30d
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-whsec_placeholder}
+      # Stripe keys are loaded from server/.env by dotenv (mounted via ./server:/app)
+      # Set them only here if you need to override the .env value at runtime.
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -55,8 +55,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      REACT_APP_API_URL: http://localhost:5000
-      REACT_APP_STRIPE_PUBLIC_KEY: ${REACT_APP_STRIPE_PUBLIC_KEY:-pk_test_placeholder}
+      VITE_API_URL: http://localhost:5000
+      VITE_STRIPE_PUBLIC_KEY: ${VITE_STRIPE_PUBLIC_KEY:-pk_test_placeholder}
       CI: "false"
     volumes:
       - ./client:/app

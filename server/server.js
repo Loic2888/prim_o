@@ -4,6 +4,7 @@ const helmet = require('helmet');
 require('dotenv').config();
 
 const sequelize = require('./src/config/database');
+require('./src/models');
 const routes = require('./src/routes');
 const { errorHandler } = require('./src/middleware/errorHandler');
 
@@ -45,6 +46,10 @@ const server = app.listen(PORT, async () => {
   try {
     await sequelize.authenticate();
     console.log('PostgreSQL connection established');
+    if (process.env.NODE_ENV !== 'production') {
+      await sequelize.sync({ alter: true });
+      console.log('Database schema synced');
+    }
   } catch (err) {
     console.error('PostgreSQL connection failed:', err.message);
     process.exit(1);
