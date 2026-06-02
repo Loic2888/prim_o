@@ -68,7 +68,7 @@ cp server/.env.example server/.env
 
 # Frontend
 cp client/.env.example client/.env
-# Fill in REACT_APP_STRIPE_PUBLIC_KEY
+# Fill in VITE_STRIPE_PUBLIC_KEY
 ```
 
 ### Run with Docker (recommended)
@@ -93,10 +93,43 @@ npm start
 
 ### Tests
 
+All test commands are run from the `server/` directory.
+
+#### Unit tests — `npm test`
+
+Runs 83 Jest tests against every service and middleware in isolation. Uses mocks — no running server or database needed. Executes in ~1.5 seconds.
+
 ```bash
 cd server
 npm test
 ```
+
+#### Practical E2E tests — `npm run test:e2e`
+
+Runs 57 end-to-end scenarios against a live server, a real PostgreSQL database and Stripe in test mode. Covers the full application flow:
+
+- Company creation and validation
+- Employer, employee and admin registration
+- JWT login, refresh and logout
+- Token purchase with Stripe test card `4242 4242 4242 4242`
+- Stripe webhook processing (`payment_intent.succeeded`)
+- Employer → employee token allocation
+- Voucher creation, update and deletion (admin)
+- Employee voucher redemption, balance deduction
+- Role-based access control (401, 403, 402 error cases)
+
+**Prerequisites:** Docker stack running + `server/.env` configured with valid Stripe test keys.
+
+```bash
+# 1. Start the stack
+docker-compose up -d
+
+# 2. Run the E2E tests
+cd server
+npm run test:e2e
+```
+
+Results are printed to the console and saved as `practical-test.md` at the project root.
 
 ---
 
