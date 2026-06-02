@@ -3,7 +3,7 @@ const errorHandler = (err, req, res, _next) => {
   const message = err.message || 'Internal server error';
 
   if (process.env.NODE_ENV !== 'test') {
-    console.error(`[${status}] ${message}`, err.stack);
+    console.error(`[${status}] ${message}`, err.stack); // eslint-disable-line no-console
   }
 
   res.status(status).json({ error: message, code: status });

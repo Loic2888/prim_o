@@ -48,3 +48,9 @@ docker-compose.override.yml
 .cache/
 *.tgz
 .env
+
+# ─── Generated reports ───────────────────────────────────────
+practical-test.md
+
+# ─── Optional: Ignore specific files or directories ───────────────
+pratical-test.md
