@@ -47,7 +47,7 @@ const server = app.listen(PORT, async () => {
     await sequelize.authenticate();
     console.log('PostgreSQL connection established');
     if (process.env.NODE_ENV !== 'production') {
-      await sequelize.sync({ alter: true });
+      await sequelize.sync({ alter: true, logging: false });
       console.log('Database schema synced');
     }
   } catch (err) {
