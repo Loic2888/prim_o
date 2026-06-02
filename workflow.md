@@ -150,6 +150,51 @@ git checkout -b feature/nom-de-la-feature
 - Écriture du script `seed.sql` avec un jeu de données complet pour le MVP (1 entreprise "TechCorp", 1 manager/employer, 1 employé avec solde de jetons, 3 bons d'achat en boutique et 1 transaction historique).
 - Mise à jour du fichier `docker-compose.yml` pour monter les volumes SQL et forcer l'ordre d'exécution par Docker (`01_init.sql` puis `02_seed.sql`).
 
+### Connexion DB, Middleware & Routes complètes (feature/backend-core) — 28/05/26 (fait par Loïc)
+
+**Couche infrastructure**
+- Création de la connexion PostgreSQL (`db/index.js`)
+- Création du middleware `authMiddleware` (vérification JWT)
+- Création du `roleGuard` (gestion des rôles `employer` / `employee` / `admin`)
+
+**Phase 05 — Routes Auth**
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `POST /api/auth/refresh`
+
+**Phase 06 — Routes Tokens**
+- `POST /api/tokens/allocate`
+- `GET /api/tokens/balance/:userId`
+- `GET /api/tokens/transactions`
+- `GET /api/tokens/transactions/:id`
+- `POST /api/tokens/webhook` (Stripe)
+
+**Phase 07 — Routes Marketplace / Vouchers**
+- `GET /api/marketplace/items`
+- `GET /api/marketplace/items/:id`
+- `POST /api/marketplace/redeem` (transaction atomique)
+- `POST /api/marketplace/items` (admin)
+- `PUT /api/marketplace/items/:id` (admin)
+- `DELETE /api/marketplace/items/:id` (admin)
+- `GET /api/marketplace/orders`
+
+**Phase 08 — Routes Users**
+- `GET /api/users`
+- `GET /api/users/:id`
+- `PUT /api/users/:id`
+- `DELETE /api/users/:id` (admin)
+- `GET /api/users/:id/history`
+
+### Intégration Stripe (feature/stripe-payment-integration) — 29/05/26 (fait par Véronique)
+
+- Création du compte Stripe test et récupération des clés (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`)
+- Installation et configuration du SDK Stripe côté backend
+- Implémentation de la création de `PaymentIntent`
+- Implémentation de la route webhook `POST /api/tokens/webhook`
+- Test du flux complet avec la carte test Stripe (`4242 4242 4242 4242`)
+
 ---
 
 ## Astuces & Résolution de problèmes (Database)
