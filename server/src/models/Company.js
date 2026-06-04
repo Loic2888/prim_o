@@ -21,25 +21,23 @@ const initCompany = (sequelize) => {
           notEmpty: true, // Prevents validation of empty strings ""
         },
       },
-      // 3. Company Email Address (Required + Format validation)
+      // 3. Company Email Address (optional for MVP self-onboarding)
       email: {
         type: DataTypes.STRING,
-        allowNull: false,
-        unique: true, // Prevents duplicate company email addresses in the database
+        allowNull: true,
+        unique: true,
         validate: {
-          isEmail: true, // Checks for valid email format (e.g., contact@acme.com)
-          notEmpty: true,
+          isEmail: true,
         },
       },
       // 4 Instead of a single 'address' field, we split it:
       street: {
         type: DataTypes.STRING,
-        allowNull: false,
-        validate: { notEmpty: true },
+        allowNull: true,
       },
       zip_code: {
-        type: DataTypes.STRING(5), // 5 characters for French zip codes
-        allowNull: false,
+        type: DataTypes.STRING(5),
+        allowNull: true,
         validate: {
           isNumeric: true,
           len: [5, 5],
@@ -47,8 +45,7 @@ const initCompany = (sequelize) => {
       },
       city: {
         type: DataTypes.STRING,
-        allowNull: false,
-        validate: { notEmpty: true },
+        allowNull: true,
       },
       // 5. SIRET Number (Optional, but must be exactly 14 characters if provided)
       siret: {

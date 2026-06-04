@@ -47,7 +47,7 @@ const deleteItem = async (req, res, next) => {
 
 const redeem = async (req, res, next) => {
   try {
-    const data = await marketplaceService.redeem(req.user.id, req.body.voucherId);
+    const data = await marketplaceService.redeem(req.user.id, req.body.voucher_id);
     res.json({ success: true, data });
   } catch (err) {
     next(err);
@@ -63,4 +63,21 @@ const listOrders = async (req, res, next) => {
   }
 };
 
-module.exports = { listItems, getItem, createItem, updateItem, deleteItem, redeem, listOrders };
+const adminListVouchers = async (req, res, next) => {
+  try {
+    const data = await marketplaceService.adminListVouchers();
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
+const adminHistory = async (req, res, next) => {
+  try {
+    const data = await marketplaceService.adminHistory();
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
+module.exports = {
+  listItems, getItem, createItem, updateItem, deleteItem, redeem,
+  listOrders, adminListVouchers, adminHistory,
+};

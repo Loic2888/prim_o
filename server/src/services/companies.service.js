@@ -7,10 +7,12 @@ const httpError = (message, status) => {
 };
 
 const create = async ({ name, email, street, zip_code, city, siret }) => {
-  const existing = await Company.findOne({ where: { email } });
-  if (existing) throw httpError('A company with this email already exists', 409);
+  if (email) {
+    const existing = await Company.findOne({ where: { email } });
+    if (existing) throw httpError('A company with this email already exists', 409);
+  }
 
-  return Company.create({ name, email, street, zip_code, city, siret });
+  return Company.create({ name, email: email || null, street: street || null, zip_code: zip_code || null, city: city || null, siret: siret || null });
 };
 
 const getById = async (id) => {
