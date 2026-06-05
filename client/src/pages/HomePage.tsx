@@ -1,0 +1,93 @@
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function HomePage() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  if (isAuthenticated && user) {
+    if (user.role === 'employer') return <Navigate to="/employer/dashboard" replace />;
+    if (user.role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/catalogue" replace />;
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #e6f7f7 0%, #ffffff 60%)',
+        padding: '40px 20px',
+        textAlign: 'center',
+      }}
+    >
+      <div style={{ maxWidth: 600 }}>
+        <div
+          style={{
+            fontSize: '2.8rem',
+            fontWeight: 800,
+            color: '#00a19a',
+            marginBottom: 20,
+            letterSpacing: '-0.04em',
+            fontFamily: "'Poppins', sans-serif",
+          }}
+        >
+          PRIM'O
+        </div>
+
+        <h1
+          style={{
+            fontSize: '1.85rem',
+            fontWeight: 700,
+            color: '#000000',
+            marginBottom: 16,
+            lineHeight: 1.3,
+            letterSpacing: '-0.02em',
+          }}
+        >
+          La reconnaissance méritocratique
+          <br />
+          en temps réel
+        </h1>
+
+        <p
+          style={{
+            color: '#6b7280',
+            fontSize: '1rem',
+            lineHeight: 1.75,
+            marginBottom: 44,
+            maxWidth: 480,
+            margin: '0 auto 44px',
+          }}
+        >
+          Récompensez instantanément vos collaborateurs dès qu'une performance est
+          observée. Ils échangent leurs tokens contre des bons d'achat dans la
+          marketplace.
+        </p>
+
+        <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/login">
+            <button
+              className="btn btn-primary"
+              style={{ padding: '12px 32px', fontSize: '0.95rem' }}
+            >
+              Se connecter
+            </button>
+          </Link>
+          <Link to="/register">
+            <button
+              className="btn btn-outline"
+              style={{ padding: '12px 32px', fontSize: '0.95rem' }}
+            >
+              Créer un compte
+            </button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -11,7 +11,7 @@ router.post(
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('first_name').trim().notEmpty().withMessage('First name is required'),
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
     body('role').isIn(['employer', 'employee', 'admin']).withMessage('Role must be employer, employee or admin'),
     body('company_id').optional().isUUID().withMessage('company_id must be a valid UUID'),
@@ -23,7 +23,7 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
     body('password').notEmpty().withMessage('Password is required'),
     validate,
   ],

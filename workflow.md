@@ -195,6 +195,72 @@ git checkout -b feature/nom-de-la-feature
 - Implémentation de la route webhook `POST /api/tokens/webhook`
 - Test du flux complet avec la carte test Stripe (`4242 4242 4242 4242`)
 
+
+### Tests E2E backend complets — 02/06/26 (fait par Loïc)
+
+Validation complète du backend via le script `server/tests/e2e/practical-test.js`.
+
+**Résultat : 57/57 tests passés — 0 échec — 0 ignoré**
+
+| Domaine | Tests validés |
+|---|:---:|
+| Infrastructure (health check, middlewares auth) | 4 |
+| Companies (création, validation, lecture, mise à jour) | 7 |
+| Auth (register, login, me, refresh, logout) | 12 |
+| Users (liste, filtre, détail, mise à jour, suppression) | 6 |
+| Marketplace — Vouchers (CRUD admin, liste, détail) | 8 |
+| Marketplace — Rachat (redeem, solde déduit, historique) | 5 |
+| Stripe (PaymentIntent, confirmation, webhook, solde crédité) | 4 |
+| Tokens — Allocation + contrôle de rôle et de solde | 5 |
+| Tokens — Transactions (liste, filtre, détail, historique) | 4 |
+| Auth — Logout et suppression de compte | 2 |
+
+**Points clés vérifiés :**
+- Guards de rôle (403) contrôlés sur toutes les routes sensibles
+- Paiement Stripe testé avec une clé réelle (`tok_visa` — carte `4242 4242 4242 4242`)
+- Logique transactionnelle : solde insuffisant → 402/403, voucher déjà utilisé → 403
+- Webhook Stripe : 500 tokens correctement crédités sur la company après `payment_intent.succeeded`
+
+Pour relancer les tests :
+```bash
+node server/tests/e2e/practical-test.js
+```
+
+### Initialisation du frontend React/TypeScript — 04/06/26 (fait par Loïc)
+
+**Étape 54-58 — Setup React + TypeScript (Vite)**
+
+Dépendances installées (`client/package.json`) :
+- `react-router-dom` v7, `axios` (déjà présents)
+- `@stripe/stripe-js`, `@stripe/react-stripe-js` (ajoutés)
+
+Structure créée sous `client/src/` :
+
+| Fichier | Rôle |
+|---|---|
+| `types/index.ts` | Types partagés : `User`, `Company`, `Voucher`, `TokenTransaction`, `Redemption`, `ApiResponse` |
+| `services/api.ts` | Instance Axios avec intercepteurs : injection du Bearer token + refresh automatique sur 401 |
+| `services/auth.service.ts` | Appels API : `login`, `register`, `logout`, `me` |
+| `context/AuthContext.tsx` | `AuthProvider` + hook `useAuth` — restaure la session depuis `localStorage` au montage |
+| `components/ProtectedRoute.tsx` | Guard de route : redirige vers `/login` si non authentifié, vers `/` si rôle insuffisant |
+| `App.tsx` | `BrowserRouter` + toutes les routes avec guards de rôle |
+| `vite-env.d.ts` | Déclaration des types Vite (`import.meta.env`) |
+
+**Pages stub créées :**
+- `pages/HomePage.tsx` — landing publique
+- `pages/LoginPage.tsx` — formulaire login avec redirection post-connexion
+- `pages/RegisterPage.tsx` — formulaire d'inscription (employer / employee)
+- `pages/employer/EmployerDashboard.tsx` — protégée `employer`
+- `pages/admin/AdminDashboard.tsx` — protégée `admin`
+- `pages/employee/Catalogue.tsx` — protégée `employee`
+- `pages/employee/Profil.tsx` — protégée (tout rôle authentifié)
+- `pages/employee/Parameters.tsx` — protégée (tout rôle authentifié)
+
+**Routage :**
+- `/` → `HomeRedirect` : affiche la landing si non connecté, redirige selon le rôle sinon
+- Routes privées via `<ProtectedRoute allowedRoles={[...]}>`, redirection propre en cas de rôle invalide
+- `tsc --noEmit` : **0 erreur TypeScript**
+
 ---
 
 ## Astuces & Résolution de problèmes (Database)

@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "test:e2e": "node tests/e2e/practical-test.js"
+    "test:e2e": "node tests/e2e/practical-test.js",
+    "db:seed": "node scripts/seed-vouchers.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

@@ -7,7 +7,7 @@ const { validate } = require('../middleware/validate');
 
 const router = Router();
 
-router.get('/items', verifyToken, roleGuard('employee'), marketplaceController.listItems);
+router.get('/items', verifyToken, marketplaceController.listItems);
 
 router.get(
   '/items/:id',
@@ -58,10 +58,14 @@ router.post(
   '/redeem',
   verifyToken,
   roleGuard('employee'),
-  [body('voucherId').isUUID().withMessage('voucherId must be a valid UUID'), validate],
+  [body('voucher_id').isUUID().withMessage('voucher_id must be a valid UUID'), validate],
   marketplaceController.redeem
 );
 
 router.get('/orders', verifyToken, roleGuard('employee'), marketplaceController.listOrders);
+
+/* ── Admin-only endpoints ── */
+router.get('/admin/vouchers', verifyToken, roleGuard('admin'), marketplaceController.adminListVouchers);
+router.get('/admin/history',  verifyToken, roleGuard('admin'), marketplaceController.adminHistory);
 
 module.exports = router;

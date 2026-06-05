@@ -85,4 +85,22 @@ const listOrders = async (userId) =>
     include: [{ model: Voucher, as: 'voucher', attributes: ['id', 'title', 'partner', 'token_cost'] }],
   });
 
-module.exports = { listItems, getItem, createItem, updateItem, deleteItem, redeem, listOrders };
+const adminListVouchers = async () =>
+  Voucher.findAll({
+    order: [['created_at', 'DESC']],
+    include: [{ model: Redemption, as: 'redemptions', attributes: ['id'] }],
+  });
+
+const adminHistory = async () =>
+  Redemption.findAll({
+    order: [['created_at', 'DESC']],
+    include: [
+      { model: User,    as: 'user',    attributes: ['id', 'first_name', 'name', 'email'] },
+      { model: Voucher, as: 'voucher', attributes: ['id', 'partner', 'title', 'token_cost'] },
+    ],
+  });
+
+module.exports = {
+  listItems, getItem, createItem, updateItem, deleteItem, redeem,
+  listOrders, adminListVouchers, adminHistory,
+};
