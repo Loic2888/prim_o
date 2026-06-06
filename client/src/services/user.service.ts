@@ -12,7 +12,7 @@ export const userService = {
     return data.data;
   },
 
-  async update(id: string, payload: Partial<Pick<User, 'name' | 'email'>> & { current_password?: string; password?: string }): Promise<User> {
+  async update(id: string, payload: Partial<Pick<User, 'name' | 'first_name' | 'email'>> & { current_password?: string; password?: string }): Promise<User> {
     const { data } = await api.put<ApiResponse<User>>(`/api/users/${id}`, payload);
     return data.data;
   },

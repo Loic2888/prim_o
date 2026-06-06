@@ -17,6 +17,12 @@ import Historique from './pages/Historique';
 import Panier from './pages/Panier';
 import Service from './pages/Service';
 import Abonnement from './pages/Abonnement';
+import MotDePasse from './pages/MotDePasse';
+import CGU from './pages/CGU';
+import Avis from './pages/Avis';
+import MesInformations from './pages/MesInformations';
+import FAQ from './pages/FAQ';
+import PourToi from './pages/PourToi';
 
 function HomeRedirect() {
   const { user, isLoading } = useAuth();
@@ -81,7 +87,13 @@ export default function App() {
           <Route path="/parametres"  element={<Wrap><Parameters /></Wrap>} />
           <Route path="/historique"  element={<Wrap><Historique /></Wrap>} />
           <Route path="/panier"      element={<Wrap><Panier /></Wrap>} />
-          <Route path="/service"     element={<Wrap><Service /></Wrap>} />
+          <Route path="/service"      element={<Wrap><Service /></Wrap>} />
+          <Route path="/mes-informations" element={<Wrap><MesInformations /></Wrap>} />
+          <Route path="/faq"              element={<Wrap><FAQ /></Wrap>} />
+          <Route path="/pour-toi"        element={<Wrap><PourToi /></Wrap>} />
+          <Route path="/mot-de-passe" element={<Wrap><MotDePasse /></Wrap>} />
+          <Route path="/cgu"          element={<Wrap><CGU /></Wrap>} />
+          <Route path="/avis"         element={<Wrap><Avis /></Wrap>} />
           <Route path="/abonnement" element={
             <ProtectedRoute allowedRoles={['employer']}>
               <Layout><Abonnement /></Layout>

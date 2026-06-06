@@ -122,26 +122,35 @@ export default function Panier() {
               </span>
             </span>
           </div>
+        </div>
+      )}
 
+      {/* Acheter le panier — toujours visible */}
+      {(() => {
+        const hasItems = cartVouchers.length > 0;
+        const canBuy = hasItems && !redeeming && cartVouchers.some(
+          v => v.available && (user?.token_balance ?? 0) >= v.token_cost
+        );
+        return (
           <button
             className="btn btn-primary btn-full"
-            disabled={
-              !!redeeming ||
-              cartVouchers.every(v => !v.available || (user?.token_balance ?? 0) < v.token_cost)
-            }
+            style={{
+              marginTop: 16,
+              opacity: canBuy ? 1 : 0.45,
+              cursor: canBuy ? 'pointer' : 'not-allowed',
+            }}
+            disabled={!canBuy}
             onClick={async () => {
               const redeemable = cartVouchers.filter(
                 v => v.available && (user?.token_balance ?? 0) >= v.token_cost
               );
-              for (const v of redeemable) {
-                await handleRedeem(v);
-              }
+              for (const v of redeemable) await handleRedeem(v);
             }}
           >
             Acheter le panier
           </button>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

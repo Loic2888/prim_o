@@ -1,89 +1,164 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+
 import { userService } from '../../services/user.service';
 
-export default function Parameters() {
-  const { user } = useAuth();
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [msg, setMsg] = useState('');
-  const [loading, setLoading] = useState(false);
+function useLocalBool(key: string, defaultValue = false) {
+  const [value, setValue] = useState<boolean>(() => {
+    const stored = localStorage.getItem(key);
+    return stored !== null ? stored === 'true' : defaultValue;
+  });
+  function toggle() {
+    setValue((v) => {
+      localStorage.setItem(key, String(!v));
+      return !v;
+    });
+  }
+  return [value, toggle] as const;
+}
 
-  async function handlePasswordChange(e: React.FormEvent) {
-    e.preventDefault();
+function Toggle({ checked, onToggle }: { checked: boolean; onToggle: () => void }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={onToggle}
+      className={`param-toggle ${checked ? 'param-toggle--on' : ''}`}
+    />
+  );
+}
+
+export default function Parameters() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? '/';
+
+  const [emailOffers, toggleEmailOffers] = useLocalBool('pref_email_offers', true);
+  const [notifications, toggleNotifications] = useLocalBool('pref_notifications', true);
+  const [lang, setLang] = useState<'fr' | 'en'>(() =>
+    (localStorage.getItem('pref_lang') as 'fr' | 'en') || 'fr'
+  );
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  function handleLang(l: 'fr' | 'en') {
+    setLang(l);
+    localStorage.setItem('pref_lang', l);
+  }
+
+  async function handleDelete() {
     if (!user?.id) return;
-    setMsg('');
-    setLoading(true);
+    setDeleting(true);
+    setDeleteError('');
     try {
-      await userService.update(user.id, {
-        current_password: currentPassword,
-        password: newPassword,
-      });
-      setMsg('Mot de passe modifié avec succès.');
-      setCurrentPassword('');
-      setNewPassword('');
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { error?: string } } };
-      setMsg(axiosErr.response?.data?.error ?? 'Erreur lors du changement de mot de passe.');
-    } finally {
-      setLoading(false);
+      await userService.delete(user.id);
+      await logout();
+      navigate('/login');
+    } catch {
+      setDeleteError('Impossible de supprimer le compte. Réessayez.');
+      setDeleting(false);
     }
   }
 
-  const isError = msg.startsWith('Erreur') || msg.startsWith('Mot de passe') === false && msg.length > 0;
-
   return (
     <div>
-      <div className="page-header">
-        <h1>Paramètres</h1>
-        <p>Préférences et sécurité</p>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <h1>Paramètres</h1>
+          <p>Préférences et compte</p>
+        </div>
+        <button className="back-btn" onClick={() => navigate(from, { state: { reopenMenu: true } })}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Retour
+        </button>
       </div>
 
-      <div style={{ maxWidth: 480 }}>
-        <div className="card">
-          <h2 style={{ marginBottom: 20, fontSize: '1rem', fontWeight: 600 }}>
-            Changer le mot de passe
-          </h2>
-          <form onSubmit={handlePasswordChange}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="currentPwd">
-                Mot de passe actuel
-              </label>
-              <input
-                id="currentPwd"
-                className="form-input"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
-              />
+      <div className="param-list">
+
+        {/* Email offers */}
+        <div className="param-card">
+          <div className="param-row">
+            <div className="param-info">
+              <span className="param-label">Recevoir les nouvelles offres par e-mail</span>
+              <span className="param-desc">Soyez alerté des bons du moment</span>
             </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="newPwd">
-                Nouveau mot de passe
-              </label>
-              <input
-                id="newPwd"
-                className="form-input"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength={8}
-                placeholder="8 caractères minimum"
-              />
-            </div>
-
-            {msg && (
-              <p className={isError ? 'form-error' : 'form-success'}>{msg}</p>
-            )}
-
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Modification…' : 'Modifier le mot de passe'}
-            </button>
-          </form>
+            <Toggle checked={emailOffers} onToggle={toggleEmailOffers} />
+          </div>
         </div>
+
+        {/* Notifications */}
+        <div className="param-card">
+          <div className="param-row">
+            <div className="param-info">
+              <span className="param-label">Notifications</span>
+              <span className="param-desc">Alertes de réception de tokens</span>
+            </div>
+            <Toggle checked={notifications} onToggle={toggleNotifications} />
+          </div>
+        </div>
+
+        {/* Language */}
+        <div className="param-card">
+          <div className="param-row">
+            <div className="param-info">
+              <span className="param-label">Langue</span>
+              <span className="param-desc">Langue d'affichage de l'application</span>
+            </div>
+            <div className="param-lang-group">
+              <button
+                className={`param-lang-btn ${lang === 'fr' ? 'param-lang-btn--active' : ''}`}
+                onClick={() => handleLang('fr')}
+              >
+                Français
+              </button>
+              <button
+                className={`param-lang-btn ${lang === 'en' ? 'param-lang-btn--active' : ''}`}
+                onClick={() => handleLang('en')}
+              >
+                English
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Delete account */}
+        <div className="param-card param-card--danger">
+          {!confirmDelete ? (
+            <button className="param-delete-btn" onClick={() => setConfirmDelete(true)}>
+              Supprimer mon compte
+            </button>
+          ) : (
+            <div className="param-delete-confirm">
+              <p className="param-delete-warning">
+                Cette action est <strong>irréversible</strong>. Toutes vos données seront supprimées définitivement.
+              </p>
+              {deleteError && <p className="form-error" style={{ marginBottom: 12 }}>{deleteError}</p>}
+              <div className="param-delete-actions">
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => { setConfirmDelete(false); setDeleteError(''); }}
+                  disabled={deleting}
+                >
+                  Annuler
+                </button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Suppression…' : 'Confirmer la suppression'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
