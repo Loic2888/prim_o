@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../hooks/useCart';
 
+
 export default function TopNav() {
   const { user, logout } = useAuth();
   const { count } = useCart();
@@ -11,7 +12,7 @@ export default function TopNav() {
   const [dropOpen, setDropOpen] = useState(false);
   const dropRef = useRef<HTMLDivElement>(null);
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     function close(e: MouseEvent) {
@@ -19,18 +20,18 @@ export default function TopNav() {
         setDropOpen(false);
       }
     }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
   }, []);
 
   async function handleLogout() {
     setDropOpen(false);
     await logout();
-    navigate('/login');
+    navigate("/login");
   }
 
   function link(isActive: boolean) {
-    return `top-nav-link${isActive ? ' top-nav-link--active' : ''}`;
+    return `top-nav-link${isActive ? " top-nav-link--active" : ""}`;
   }
 
   return (
@@ -39,17 +40,63 @@ export default function TopNav() {
         {/* Brand */}
         <span className="top-nav-brand">PRIM'O</span>
 
-        {/* Links — admin vs other roles */}
+        {/* 1. Les liens (Gauche) */}
         <nav className="top-nav-links">
           {isAdmin ? (
             <>
-              <NavLink to="/admin/dashboard" className={({ isActive }) => link(isActive)}>Entreprises</NavLink>
-              <NavLink to="/catalogue"       className={({ isActive }) => link(isActive)}>Catalogue</NavLink>
-              <NavLink to="/admin/stats"     className={({ isActive }) => link(isActive)}>Dashboard</NavLink>
-              <NavLink to="/admin/bons"      className={({ isActive }) => link(isActive)}>Bons d'achat</NavLink>
+              <NavLink
+                to="/admin/dashboard"
+                className={({ isActive }) => link(isActive)}
+              >
+                Entreprises
+              </NavLink>
+              <NavLink
+                to="/catalogue"
+                className={({ isActive }) => link(isActive)}
+              >
+                Catalogue
+              </NavLink>
+              <NavLink
+                to="/admin/stats"
+                className={({ isActive }) => link(isActive)}
+              >
+                Dashboard
+              </NavLink>
+              <NavLink
+                to="/admin/bons"
+                className={({ isActive }) => link(isActive)}
+              >
+                Bons d'achat
+              </NavLink>
             </>
           ) : (
             <>
+              <NavLink
+                to={
+                  user?.role === "employer"
+                    ? "/employer/dashboard"
+                    : "/pour-toi"
+                }
+                className={({ isActive }) => link(isActive)}
+              >
+                Pour toi
+              </NavLink>
+              <NavLink
+                to="/catalogue"
+                className={({ isActive }) => link(isActive)}
+              >
+                Catalogue
+              </NavLink>
+              <NavLink
+                to="/historique"
+                className={({ isActive }) => link(isActive)}
+              >
+                Historique
+              </NavLink>
+              <NavLink
+                to="/panier"
+                className={({ isActive }) => link(isActive)}
+              >
               <NavLink to={user?.role === 'employer' ? '/employer/dashboard' : '/pour-toi'} className={({ isActive }) => link(isActive)}>Pour toi</NavLink>
               <NavLink to="/catalogue"  className={({ isActive }) => link(isActive)}>Catalogue</NavLink>
               <NavLink to="/historique" className={({ isActive }) => link(isActive)}>Historique</NavLink>
@@ -59,7 +106,6 @@ export default function TopNav() {
               </NavLink>
             </>
           )}
-        </nav>
 
         {/* User menu */}
         <div className="top-nav-user" ref={dropRef}>
@@ -106,8 +152,8 @@ export default function TopNav() {
                 Déconnexion
               </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );
