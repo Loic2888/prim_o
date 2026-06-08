@@ -226,6 +226,46 @@ Pour relancer les tests :
 node server/tests/e2e/practical-test.js
 ```
 
+### Développement frontend — UI & fonctionnalités MVP — 04/06/26 (fait par Loïc & Véro)
+
+**Navbar mobile (bottom pill) & desktop (top bar)**
+- Navbar mobile : pilule flottante en bas, fond sombre/transparent, icônes blanches, icône active en vert
+- Navbar desktop (≥1024px) : barre horizontale noire en haut avec liens de navigation
+- Navbar **role-aware** : boutons différents selon le rôle (employer, employee, admin)
+- Admin : Entreprises · Catalogue · Dashboard · Bons d'achat
+- Menu slide-up : Paramètres / Service client / Déconnexion
+
+**Pages créées**
+- `Historique.tsx` — 3 onglets : Mes tokens, Mes achats, Mon équipe (employer)
+- `Panier.tsx` — bons sauvegardés, rachat individuel ou "Acheter le panier"
+- `Service.tsx` — page support / contact
+- `Abonnement.tsx` — plans de tokens mensuels (Starter / Growth / Scale), stub Stripe
+- `admin/AdminBons.tsx` — 3 onglets : Gérer (CRUD bons), Historique des achats, Top ventes
+- `admin/AdminStats.tsx` — KPIs globaux (entreprises, bons, rachats, taux)
+
+**Catalogue redesigné**
+- Carousels horizontaux par catégorie (Tech, Alimentation, Divertissement, Sport, Beauté, Mode, Maison)
+- Catégorie "Populaires" en premier (6 bons les moins chers)
+- Recherche plein texte + chips de filtre par catégorie
+- Bouton bookmark pour sauvegarder dans le panier
+
+**Top bar mobile**
+- Badge token (solde de l'utilisateur) en haut à droite
+- Bouton "+ Acheter" pour les employeurs → page abonnement
+
+**Corrections de bugs**
+- Inscription employeur : champs `email`, `street`, `zip_code`, `city` rendus optionnels dans le modèle Company et la route companies (MVP self-onboarding avec juste le nom)
+- Route `GET /catalogue` ouverte à tous les rôles authentifiés (plus restreinte employee)
+- `company_id` dans auth routes repassé en `isUUID()` (les IDs Company sont des UUID)
+- Couleur des boutons actifs : texte blanc immédiatement au clic (fix `:focus` override)
+
+**Backend — nouveaux endpoints admin**
+- `GET /api/marketplace/admin/vouchers` — tous les bons avec compteur rachats
+- `GET /api/marketplace/admin/history` — tous les rachats avec user + voucher joints
+- `POST/PUT/DELETE /api/marketplace/items` — CRUD bons accessibles depuis AdminBons
+
+---
+
 ### Initialisation du frontend React/TypeScript — 04/06/26 (fait par Loïc)
 
 **Étape 54-58 — Setup React + TypeScript (Vite)**
@@ -260,6 +300,72 @@ Structure créée sous `client/src/` :
 - `/` → `HomeRedirect` : affiche la landing si non connecté, redirige selon le rôle sinon
 - Routes privées via `<ProtectedRoute allowedRoles={[...]}>`, redirection propre en cas de rôle invalide
 - `tsc --noEmit` : **0 erreur TypeScript**
+
+---
+
+### Navigation & UX — 05/06/26 (fait par Loïc)
+
+**Compte employé créé en base**
+- Insertion directe via `docker exec` : Loic / loic.88@gmail.com / rôle `employee` / entreprise Leclerc
+
+**Fil d'activité temps réel (page Historique)**
+- Nouvelle section sous les onglets : liste des allocations de tokens dans l'entreprise, polling toutes les 5 s
+- Nouvelles entrées animées (slide-in) pendant 1,8 s
+- Backend : filtre `type` ajouté à `listTransactions`
+
+**Refonte du menu "Voir plus" (BottomNav & TopNav)**
+- Bouton "Menu" renommé **"Voir plus"**, icône 3 points, placé en dernière position à droite
+- Menu sheet mobile avec 6 entrées + chevron : Paramètres · Mes informations personnelles · Changer mon mot de passe · Aide · Voir les CGU · Nous noter
+- Même liste dans le dropdown TopNav desktop
+- Menu sheet s'ouvre **au-dessus** de la navbar (z-index revu, padding-bottom overlay)
+- Navigation depuis le menu : `state.from` + `state.reopenMenu` pour restaurer le menu au retour
+
+**Page Paramètres** (`/parametres`)
+- Toggle e-mail offres, toggle notifications (localStorage)
+- Sélecteur de langue Français / English (localStorage)
+- Suppression de compte : confirmation inline → `DELETE /api/users/:id` → logout
+
+**Page Mes informations** (`/mes-informations`)
+- Champs Prénom, Nom, Entreprise (lecture seule, fetch API), Email
+- Bouton Enregistrer grisé, actif dès qu'un champ change
+
+**Page Changer mon mot de passe** (`/mot-de-passe`)
+- Champs avec œil afficher/masquer
+- Prérequis en temps réel (8 car., chiffre, maj., min., spécial) — règles cochées au fur et à mesure
+- Indicateur ✓/✗ sur la confirmation, bouton actif quand tout est valide
+
+**Page Aide** (`/service`)
+- Texte d'intro + 2 cards cliquables : FAQ et Nous contacter
+
+**Page FAQ** (`/faq`)
+- Barre sticky avec ← Retour
+- 5 sections accordéon, 17 questions/réponses
+- Section contact en bas : email + LinkedIn, Instagram, X
+
+**Page CGU-CGV** (`/cgu`)
+- Barre sticky avec ← Retour
+- 17 articles complets (objet → droit applicable), texte justifié
+- Section contact centrée en bas : email + réseaux sociaux
+
+**Page Pour toi** (`/pour-toi`)
+- Remplace l'ancienne page Profil dans la navbar (mobile + desktop), bouton renommé **"Pour toi"**, placé en premier à gauche
+- Carousel horizontal "Offres du moment" (8 bons les moins chers)
+- Section "Mes bons d'achat" : liste des rachats de l'utilisateur avec partenaire, titre, date, code promo
+
+**Page Panier**
+- Bouton **"Acheter le panier"** déplacé hors de la carte, toujours visible, grisé si panier vide
+
+**Design global**
+- Barre `.page-header` : fond vert primary, rayures diagonales subtiles, titre en vert très clair (`#d4f5f3`), sous-titre blanc 75%
+- Titres centrés sur toutes les pages
+- Bouton ← Retour adapté (blanc sur fond vert)
+- Barre `.faq-topbar` sticky sur FAQ, CGU, Nous noter
+
+---
+
+## TODO
+
+- [ ] **Nettoyer les contraintes UNIQUE dupliquées sur `users.email`** — la table contient ~22 index `users_email_keyX` identiques, probablement générés par des migrations Sequelize rejouées en boucle. À corriger via une migration qui supprime les doublons et ne conserve qu'un seul `UNIQUE` sur `email`.
 
 ---
 

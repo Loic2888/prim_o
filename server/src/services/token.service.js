@@ -60,11 +60,15 @@ const getBalance = async (userId) => {
   return { userId: user.id, token_balance: user.token_balance };
 };
 
-const listTransactions = async ({ userId, date } = {}) => {
+const listTransactions = async ({ userId, date, type } = {}) => {
   const where = {};
 
   if (userId) {
     where[Op.or] = [{ sender_id: userId }, { receiver_id: userId }];
+  }
+
+  if (type) {
+    where.type = type;
   }
 
   if (date) {
