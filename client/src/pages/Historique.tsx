@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userService } from '../services/user.service';
 import { marketplaceService } from '../services/marketplace.service';
@@ -22,6 +22,9 @@ export default function Historique() {
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [teamTx, setTeamTx] = useState<TokenTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [feed, setFeed] = useState<TokenTransaction[]>([]);
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const knownIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user?.id) return;
@@ -39,6 +42,33 @@ export default function Historique() {
 
     Promise.all(tasks).finally(() => setLoading(false));
   }, [user?.id, user?.role]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchFeed = async () => {
+      try {
+        const data = await tokenService.getTransactions({ type: 'allocation' });
+        const sorted = data.slice(0, 20);
+
+        const incoming = sorted.filter((tx) => !knownIds.current.has(tx.id));
+        if (incoming.length > 0) {
+          const ids = new Set(incoming.map((tx) => tx.id));
+          setNewIds(ids);
+          incoming.forEach((tx) => knownIds.current.add(tx.id));
+          setTimeout(() => setNewIds(new Set()), 1800);
+        }
+
+        setFeed(sorted);
+      } catch {
+        // silently ignore — feed is non-critical
+      }
+    };
+
+    fetchFeed();
+    const interval = setInterval(fetchFeed, 5000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   if (loading) return <div style={{ padding: 32, color: 'var(--text-muted)' }}>Chargement…</div>;
 
@@ -152,9 +182,7 @@ export default function Historique() {
                     .map((tx) => (
                       <tr key={tx.id}>
                         <td style={{ fontWeight: 500, fontSize: '0.82rem' }}>
-                          {(tx as TokenTransaction & { receiver?: { name?: string; first_name?: string } }).receiver?.first_name
-                            || (tx as TokenTransaction & { receiver?: { name?: string } }).receiver?.name
-                            || tx.receiver_id?.slice(0, 8)}
+                          {tx.receiver?.first_name || tx.receiver?.name || tx.receiver_id?.slice(0, 8)}
                         </td>
                         <td><span className="token-badge">{tx.amount}</span></td>
                         <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{tx.reason || '—'}</td>
@@ -167,6 +195,33 @@ export default function Historique() {
           )}
         </div>
       )}
+
+      {/* Fil d'activité entreprise — temps réel */}
+      <div className="card feed-card" style={{ marginTop: 24 }}>
+        <div className="feed-header">
+          <span className="feed-title">Activité dans l'entreprise</span>
+          <span className="feed-dot" />
+        </div>
+        {feed.length === 0 ? (
+          <p className="empty-state">Aucune activité pour le moment.</p>
+        ) : (
+          <ul className="feed-list">
+            {feed.map((tx) => {
+              const name = tx.receiver?.first_name || tx.receiver?.name || 'Un employé';
+              const isNew = newIds.has(tx.id);
+              return (
+                <li key={tx.id} className={`feed-item${isNew ? ' feed-item--new' : ''}`}>
+                  <span className="feed-avatar">{name.charAt(0).toUpperCase()}</span>
+                  <span className="feed-text">
+                    <strong>{name}</strong> a gagné <span className="token-badge feed-badge">+{tx.amount}</span> tokens !
+                  </span>
+                  <span className="feed-time">{fmt(tx.created_at)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

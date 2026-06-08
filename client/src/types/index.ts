@@ -28,8 +28,11 @@ export interface TokenTransaction {
   receiver_id: string | null;
   amount: number;
   reason: string;
+  type?: string;
   stripe_payment_id?: string;
   created_at: string;
+  sender?: { id: string; name: string; first_name: string; email: string } | null;
+  receiver?: { id: string; name: string; first_name: string; email: string } | null;
 }
 
 export interface Voucher {
@@ -47,6 +50,7 @@ export interface Redemption {
   voucher_id: string;
   promo_code: string;
   redeemed_at: string;
+  voucher?: { id: string; title: string; partner: string; token_cost: number };
 }
 
 export interface ApiResponse<T> {
