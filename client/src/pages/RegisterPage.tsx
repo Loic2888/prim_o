@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { companyService } from "../services/company.service";
 
@@ -8,8 +8,11 @@ type Role = "employer" | "employee";
 export default function RegisterPage() {
   const { register, isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [role, setRole] = useState<Role>("employee");
+  const qrCompanyId = searchParams.get("companyId") ?? "";
+
+  const [role, setRole] = useState<Role>(qrCompanyId ? "employee" : "employee");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,14 +24,23 @@ export default function RegisterPage() {
   const [street, setStreet] = useState("");
   const [zipCode, setZipCode] = useState("");
   const [city, setCity] = useState("");
-  const [companyId, setCompanyId] = useState("");
+  const [companyId, setCompanyId] = useState(qrCompanyId);
+  const [qrCompanyName, setQrCompanyName] = useState("");
 
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!qrCompanyId) return;
+    companyService.getPublicById(qrCompanyId)
+      .then((c) => setQrCompanyName(c.name))
+      .catch(() => {});
+  }, [qrCompanyId]);
+
   if (isLoading) return null;
 
-  if (isAuthenticated && user) {
+  // Si déjà connecté ET pas de QR code → rediriger vers le dashboard
+  if (isAuthenticated && user && !qrCompanyId) {
     if (user.role === "employer")
       return <Navigate to="/employer/dashboard" replace />;
     if (user.role === "admin")
@@ -84,24 +96,37 @@ export default function RegisterPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-logo">PRIM'O</div>
-        <h1 className="auth-title">Créer un compte</h1>
+
+        {qrCompanyId ? (
+          <>
+            <h1 className="auth-title">Créer votre compte employé</h1>
+            <p className="auth-subtitle">
+              Vous rejoignez{' '}
+              <strong>{qrCompanyName || '…'}</strong>
+            </p>
+          </>
+        ) : (
+          <h1 className="auth-title">Créer un compte</h1>
+        )}
 
         <form onSubmit={handleSubmit}>
-          {/* Rôle */}
-          <div className="form-group">
-            <label className="form-label" htmlFor="role">
-              Je suis
-            </label>
-            <select
-              id="role"
-              className="form-select"
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-            >
-              <option value="employee">Employé</option>
-              <option value="employer">Employeur</option>
-            </select>
-          </div>
+          {/* Rôle — masqué si l'inscription vient d'un QR code (rôle forcé à employé) */}
+          {!qrCompanyId && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="role">
+                Je suis
+              </label>
+              <select
+                id="role"
+                className="form-select"
+                value={role}
+                onChange={(e) => setRole(e.target.value as Role)}
+              >
+                <option value="employee">Employé</option>
+                <option value="employer">Employeur</option>
+              </select>
+            </div>
+          )}
 
           {/* Name and Lastname */}
           <div className="form-group">
@@ -232,15 +257,34 @@ export default function RegisterPage() {
           {/* Employee-specific fields */}
           {role === "employee" && (
             <div className="form-group">
-              <label className="form-label" htmlFor="companyId">
-                ID de votre entreprise
-              </label>
-              <input
-                id="companyId"
-                className="form-input"
-                value={companyId}
-                onChange={(e) => setCompanyId(e.target.value)}
-              />
+              <label className="form-label">Entreprise</label>
+              {qrCompanyId ? (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--primary)',
+                  background: 'var(--primary-light)',
+                  color: 'var(--primary)',
+                  fontWeight: 600,
+                  fontSize: '0.92rem',
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16, flexShrink: 0 }}>
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                  {qrCompanyName || '…'}
+                </div>
+              ) : (
+                <input
+                  id="companyId"
+                  className="form-input"
+                  value={companyId}
+                  onChange={(e) => setCompanyId(e.target.value)}
+                  placeholder="ID de votre entreprise"
+                />
+              )}
             </div>
           )}
 

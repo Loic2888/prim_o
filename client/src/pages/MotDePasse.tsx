@@ -70,12 +70,13 @@ export default function MotDePasse() {
   const location  = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/';
 
-  const [current, setCurrent]   = useState('');
-  const [next, setNext]         = useState('');
-  const [repeat, setRepeat]     = useState('');
-  const [saving, setSaving]     = useState(false);
-  const [msg, setMsg]           = useState('');
-  const [isError, setIsError]   = useState(false);
+  const [current, setCurrent]     = useState('');
+  const [next, setNext]           = useState('');
+  const [repeat, setRepeat]       = useState('');
+  const [showRepeat, setShowRepeat] = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [msg, setMsg]             = useState('');
+  const [isError, setIsError]     = useState(false);
 
   const rules = [
     { label: '8 caractères minimum',    ok: next.length >= 8 },
@@ -112,9 +113,9 @@ export default function MotDePasse() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
-          <h1>Changer mon mot de passe</h1>
+          <h1>Mot de passe</h1>
           <p>Sécurisez votre compte</p>
         </div>
         <button className="back-btn" onClick={() => navigate(from, { state: { reopenMenu: true } })}>
@@ -162,7 +163,7 @@ export default function MotDePasse() {
             <div className="pwd-input-wrap">
               <input
                 id="repeat"
-                type="password"
+                type={showRepeat ? 'text' : 'password'}
                 className="pwd-input"
                 value={repeat}
                 onChange={(e) => { setRepeat(e.target.value); setMsg(''); }}
@@ -173,6 +174,14 @@ export default function MotDePasse() {
                   {passwordsMatch ? '✓' : '✗'}
                 </span>
               )}
+              <button
+                type="button"
+                className="pwd-eye-btn"
+                onClick={() => setShowRepeat((v) => !v)}
+                aria-label={showRepeat ? 'Masquer' : 'Afficher'}
+              >
+                <EyeIcon visible={showRepeat} />
+              </button>
             </div>
           </div>
 

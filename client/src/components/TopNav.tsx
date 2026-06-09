@@ -5,7 +5,7 @@ import { useCart } from '../hooks/useCart';
 
 
 export default function TopNav() {
-  const { user, logout } = useAuth();
+  const { user, company, logout } = useAuth();
   const { count } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
@@ -13,6 +13,7 @@ export default function TopNav() {
   const dropRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = user?.role === "admin";
+  const onPanier = location.pathname === '/panier';
 
   useEffect(() => {
     function close(e: MouseEvent) {
@@ -34,13 +35,17 @@ export default function TopNav() {
     return `top-nav-link${isActive ? " top-nav-link--active" : ""}`;
   }
 
+  const tokenBalance = user?.role === 'employer'
+    ? (company?.token_balance ?? '…')
+    : (user?.token_balance ?? 0);
+
   return (
     <header className="top-nav">
       <div className="top-nav-inner">
         {/* Brand */}
         <span className="top-nav-brand">PRIM'O</span>
 
-        {/* 1. Les liens (Gauche) */}
+        {/* Nav links + Voir plus (à gauche) */}
         <nav className="top-nav-links">
           {isAdmin ? (
             <>
@@ -52,86 +57,98 @@ export default function TopNav() {
           ) : (
             <>
               <NavLink
-                to={
-                  user?.role === "employer"
-                    ? "/employer/dashboard"
-                    : "/pour-toi"
-                }
+                to={user?.role === "employer" ? "/employer/dashboard" : "/pour-toi"}
                 className={({ isActive }) => link(isActive)}
               >
                 Pour toi
               </NavLink>
-              <NavLink
-                to="/catalogue"
-                className={({ isActive }) => link(isActive)}
-              >
-                Catalogue
-              </NavLink>
-              <NavLink
-                to="/historique"
-                className={({ isActive }) => link(isActive)}
-              >
-                Historique
-              </NavLink>
-              <NavLink
-                to="/panier"
-                className={({ isActive }) => link(isActive)}
-              >
-              <NavLink to={user?.role === 'employer' ? '/employer/dashboard' : '/pour-toi'} className={({ isActive }) => link(isActive)}>Pour toi</NavLink>
-              <NavLink to="/catalogue"  className={({ isActive }) => link(isActive)}>Catalogue</NavLink>
-              <NavLink to="/historique" className={({ isActive }) => link(isActive)}>Historique</NavLink>
-              <NavLink to="/panier"     className={({ isActive }) => link(isActive)}>
+              <NavLink to="/catalogue"   className={({ isActive }) => link(isActive)}>Catalogue</NavLink>
+              <NavLink to="/historique"  className={({ isActive }) => link(isActive)}>Historique</NavLink>
+              <NavLink to="/panier"      className={({ isActive }) => link(isActive)}>
                 Panier
                 {count > 0 && <span className="top-nav-badge">{count}</span>}
               </NavLink>
             </>
           )}
 
-        {/* User menu */}
-        <div className="top-nav-user" ref={dropRef}>
-          <button
-            className="top-nav-more-btn"
-            onClick={() => setDropOpen((v) => !v)}
-            aria-label="Voir plus"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 18, height: 18 }}>
-              <circle cx="5"  cy="12" r="2" />
-              <circle cx="12" cy="12" r="2" />
-              <circle cx="19" cy="12" r="2" />
-            </svg>
-            Voir plus
-          </button>
+          {/* Voir plus — déplacé ici à gauche */}
+          <div className="top-nav-more-wrap" ref={dropRef}>
+            <button
+              className="top-nav-more-btn"
+              onClick={() => setDropOpen((v) => !v)}
+              aria-label="Voir plus"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 18, height: 18 }}>
+                <circle cx="5"  cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+              </svg>
+              Voir plus
+            </button>
 
-          {dropOpen && (
-            <div className="top-nav-dropdown">
-              <div className="top-nav-drop-user">
-                <p className="top-nav-drop-name">{user?.first_name || user?.name}</p>
-                <p className="top-nav-drop-email">{user?.email}</p>
-                <span className="menu-sheet-role">{user?.role}</span>
-              </div>
-              <div className="top-nav-drop-divider" />
-              {[
-                { label: 'Paramètres',                    path: '/parametres'    },
-                { label: 'Mes informations personnelles', path: '/mes-informations' },
-                { label: 'Changer mon mot de passe',      path: '/mot-de-passe'  },
-                { label: 'Aide',                          path: '/service'       },
-                { label: 'Voir les CGU',                  path: '/cgu'           },
-                { label: 'Nous noter',                    path: '/avis'          },
-              ].map((item) => (
-                <button
-                  key={item.path}
-                  className="top-nav-drop-item top-nav-drop-item--chevron"
-                  onClick={() => { setDropOpen(false); navigate(item.path, { state: { from: location.pathname } }); }}
-                >
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                  <span className="top-nav-drop-chevron">›</span>
+            {dropOpen && (
+              <div className="top-nav-dropdown">
+                <div className="top-nav-drop-user">
+                  <p className="top-nav-drop-name">{user?.first_name || user?.name}</p>
+                  <p className="top-nav-drop-email">{user?.email}</p>
+                  <span className="menu-sheet-role">{user?.role}</span>
+                </div>
+                <div className="top-nav-drop-divider" />
+                {[
+                  { label: 'Paramètres',                    path: '/parametres'       },
+                  { label: 'Mes informations personnelles', path: '/mes-informations' },
+                  { label: 'Changer mon mot de passe',      path: '/mot-de-passe'     },
+                  { label: 'Aide',                          path: '/service'           },
+                  { label: 'Voir les CGU',                  path: '/cgu'              },
+                  { label: 'Nous noter',                    path: '/avis'             },
+                ].map((item) => (
+                  <button
+                    key={item.path}
+                    className="top-nav-drop-item top-nav-drop-item--chevron"
+                    onClick={() => { setDropOpen(false); navigate(item.path, { state: { from: location.pathname } }); }}
+                  >
+                    <span style={{ flex: 1 }}>{item.label}</span>
+                    <span className="top-nav-drop-chevron">›</span>
+                  </button>
+                ))}
+                <div className="top-nav-drop-divider" />
+                <button className="top-nav-drop-item top-nav-drop-item--danger" onClick={handleLogout}>
+                  Déconnexion
                 </button>
-              ))}
-              <div className="top-nav-drop-divider" />
-              <button className="top-nav-drop-item top-nav-drop-item--danger" onClick={handleLogout}>
-                Déconnexion
+              </div>
+            )}
+          </div>
+        </nav>
+
+        {/* Droite : balance tokens + Valider le panier */}
+        {user && (
+          <div className="top-nav-right">
+            {user?.role === 'employer' && (
+              <button
+                className="top-bar-buy"
+                onClick={() => navigate('/abonnement')}
+                aria-label="Acheter des tokens"
+              >
+                + Acheter
               </button>
+            )}
+            <div className="top-bar-tokens">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <span>{tokenBalance}</span>
             </div>
+            {onPanier && (
+              <button
+                className="btn btn-primary"
+                style={{ fontSize: '0.82rem', padding: '6px 16px', borderRadius: 8 }}
+                onClick={() => window.dispatchEvent(new CustomEvent('panier:validate'))}
+              >
+                Valider le panier
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -287,9 +287,8 @@ export default function Catalogue() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Catalogue</h1>
-        <p>Échangez vos tokens contre des bons d'achat</p>
+      <div className="page-header page-header--centered">
+        <h1>Échangez vos tokens contre des bons d'achat</h1>
       </div>
 
       <div ref={searchWrapperRef} style={{ marginBottom: 14, position: 'relative' }}>

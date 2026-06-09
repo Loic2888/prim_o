@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
           <h1>Entreprises</h1>
           <p>Bienvenue, {user?.name}</p>

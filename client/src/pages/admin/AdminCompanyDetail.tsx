@@ -24,7 +24,7 @@ export default function AdminCompanyDetail() {
       companyService.getById(id),
       userService.getAll({ companyId: id }),
     ])
-      .then(([c, u]) => { setCompany(c); setEmployees(u); })
+      .then(([c, u]) => { setCompany(c); setEmployees((u as any).data?.data || []); })
       .catch(() => setError('Impossible de charger les données.'))
       .finally(() => setLoading(false));
   }, [id]);
@@ -54,7 +54,7 @@ export default function AdminCompanyDetail() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
           <h1>{company.name}</h1>
           <p>{company.city ?? ''}</p>

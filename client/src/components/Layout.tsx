@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function Layout({ children }: Props) {
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -35,7 +35,7 @@ export default function Layout({ children }: Props) {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 6v6l4 2" />
               </svg>
-              <span>{user.token_balance ?? 0}</span>
+              <span>{user.role === 'employer' ? (company?.token_balance ?? '…') : (user.token_balance ?? 0)}</span>
             </div>
           </div>
         )}

@@ -25,18 +25,24 @@ export default function Historique() {
   const [feed, setFeed] = useState<TokenTransaction[]>([]);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const knownIds = useRef<Set<string>>(new Set());
+  const isFirstFeed = useRef(true);
 
   useEffect(() => {
     if (!user?.id) return;
 
     const tasks: Promise<unknown>[] = [
       userService.getHistory(user.id).then(setTransactions).catch(() => {}),
-      marketplaceService.getOrders().then(setRedemptions).catch(() => {}),
     ];
+
+    if (user.role === 'employee') {
+      tasks.push(
+        marketplaceService.getOrders().then(setRedemptions).catch(() => {}),
+      );
+    }
 
     if (user.role === 'employer') {
       tasks.push(
-        tokenService.getTransactions().then(setTeamTx).catch(() => {}),
+        tokenService.getTransactions({ userId: user.id }).then(setTeamTx).catch(() => {}),
       );
     }
 
@@ -48,18 +54,21 @@ export default function Historique() {
 
     const fetchFeed = async () => {
       try {
-        const data = await tokenService.getTransactions({ type: 'allocation' });
-        const sorted = data.slice(0, 20);
+        const data = await tokenService.getTransactions({ userId: user.id });
+        const latest = data.slice(0, 10);
+        const incoming = latest.filter((tx) => !knownIds.current.has(tx.id));
+        if (incoming.length === 0) return;
 
-        const incoming = sorted.filter((tx) => !knownIds.current.has(tx.id));
-        if (incoming.length > 0) {
-          const ids = new Set(incoming.map((tx) => tx.id));
-          setNewIds(ids);
-          incoming.forEach((tx) => knownIds.current.add(tx.id));
+        incoming.forEach((tx) => knownIds.current.add(tx.id));
+
+        if (isFirstFeed.current) {
+          isFirstFeed.current = false;
+          setFeed(latest);
+        } else {
+          setNewIds(new Set(incoming.map((tx) => tx.id)));
           setTimeout(() => setNewIds(new Set()), 1800);
+          setFeed((prev) => [...incoming, ...prev].slice(0, 10));
         }
-
-        setFeed(sorted);
       } catch {
         // silently ignore — feed is non-critical
       }
@@ -80,9 +89,8 @@ export default function Historique() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Historique</h1>
-        <p>Suivi de vos tokens et de vos échanges</p>
+      <div className="page-header page-header--centered">
+        <h1>Suivi de vos tokens et de vos échanges</h1>
       </div>
 
       {/* Tabs */}
@@ -117,7 +125,7 @@ export default function Historique() {
                   {transactions.map((tx) => (
                     <tr key={tx.id}>
                       <td><span className="token-badge">+{tx.amount}</span></td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{tx.reason || '—'}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{tx.type || '—'}</td>
                       <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{fmt(tx.created_at)}</td>
                     </tr>
                   ))}
@@ -185,7 +193,7 @@ export default function Historique() {
                           {tx.receiver?.first_name || tx.receiver?.name || tx.receiver_id?.slice(0, 8)}
                         </td>
                         <td><span className="token-badge">{tx.amount}</span></td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{tx.reason || '—'}</td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{tx.type || '—'}</td>
                         <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{fmt(tx.created_at)}</td>
                       </tr>
                     ))}

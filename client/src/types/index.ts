@@ -28,8 +28,8 @@ export interface TokenTransaction {
   sender_id: string | null;
   receiver_id: string | null;
   amount: number;
-  reason: string;
-  type?: string;
+  type: string;
+  reason?: string;
   stripe_payment_id?: string;
   created_at: string;
   sender?: { id: string; name: string; first_name: string; email: string } | null;

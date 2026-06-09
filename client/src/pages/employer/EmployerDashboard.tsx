@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { userService } from "../../services/user.service";
 import { companyService } from "../../services/company.service";
 import TransferForm from "../../components/TransferForm";
 import type { User, Company } from "../../types";
-import { Link } from "react-router-dom";
 import { PrintableQRCode } from "../../components/PrintableQRCode";
 
 export default function EmployerDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<User[]>([]);
   const [pendingEmployees, setPendingEmployees] = useState<User[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
@@ -44,11 +45,12 @@ export default function EmployerDashboard() {
   const handleActivate = async (id: string) => {
     try {
       await userService.activate(id);
-      fetchData(); // Rafraîchit tout après activation
+      fetchData();
     } catch {
       alert("Erreur lors de la validation");
     }
   };
+
 
   useEffect(() => {
     fetchData();
@@ -61,56 +63,21 @@ export default function EmployerDashboard() {
 
   return (
     <div>
-      <div
-        className="page-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div
-          className="page-header"
-          style={{
-            textAlign: "center",
-            marginBottom: "32px",
-            marginTop: "16px",
-          }}
-        >
-          <h1
-            style={{ fontSize: "1.2rem", fontWeight: 500, marginBottom: "8px" }}
-          >
-            Tableau de bord
-          </h1>
-
-          {/* Prénom + Première lettre du nom de famille avec un point */}
-          <p
-            style={{
-              fontSize: "1.1rem",
-              color: "var(--text-muted)",
-              marginBottom: "16px",
-            }}
-          >
-            {user?.first_name} {user?.name ? user.name.charAt(0) + "." : ""}
-          </p>
-
-          {/* Nom de l'entreprise : Plus gros et en majuscules */}
-          <h2
-            style={{
-              fontSize: "2.5rem",
-              textTransform: "uppercase",
-              fontWeight: "800",
-              color: "#ffffff",
-            }}
-          >
-            {company?.name || "Chargement..."}
-          </h2>
-        </div>
+      <div className="page-header page-header--centered">
+        <h1>
+          Tableau de bord<br />
+          {company?.name || "Chargement..."}
+        </h1>
       </div>
 
       {error && <p className="form-error">{error}</p>}
 
       <div className="grid-3" style={{ marginBottom: 28 }}>
+        <div className="stat-card">
+          <p className="stat-label">Budget tokens</p>
+          <p className="stat-value">{company?.token_balance ?? 0}</p>
+          <p className="stat-sub">tokens à distribuer</p>
+        </div>
         <div className="stat-card">
           <p className="stat-label">Équipe</p>
           <p className="stat-value">{employees.length}</p>
@@ -137,16 +104,22 @@ export default function EmployerDashboard() {
               style={{
                 display: "flex",
                 justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "8px",
                 padding: "10px 0",
                 borderBottom: "1px solid #eee",
               }}
             >
-              <span>
-                {emp.first_name} {emp.name} ({emp.email})
+              <span style={{ minWidth: 0, flex: 1 }}>
+                {emp.first_name} {emp.name}
+                <span style={{ color: "var(--text-muted)", fontSize: "0.82rem", marginLeft: 4 }}>
+                  ({emp.email})
+                </span>
               </span>
               <button
                 onClick={() => handleActivate(emp.id)}
-                className="btn btn-primary"
+                className="btn btn-primary btn-sm"
               >
                 Valider
               </button>
@@ -165,28 +138,24 @@ export default function EmployerDashboard() {
           {employees.length === 0 ? (
             <p className="empty-state">Aucun employé dans votre équipe.</p>
           ) : (
-            <div className="table-wrap">
-              <table className="table">
+            <div className="table-wrap" style={{ maxHeight: 320, overflowY: "auto" }}>
+              <table className="table" style={{ minWidth: 0 }}>
                 <thead>
                   <tr>
-                    <th>Nom</th>
-                    <th>Email</th>
-                    <th>Tokens</th>
+                    <th style={{ padding: "7px 10px" }}>Nom</th>
+                    <th style={{ padding: "7px 10px" }}>Email</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Array.isArray(employees) &&
                     employees.map((emp) => (
-                      <tr key={emp.id}>
-                        <td style={{ fontWeight: 500 }}>{emp.name}</td>
-                        <td style={{ color: "var(--text-muted)" }}>
-                          {emp.email}
-                        </td>
-                        <td>
-                          <span className="token-badge">
-                            {emp.token_balance}
-                          </span>
-                        </td>
+                      <tr
+                        key={emp.id}
+                        onClick={() => navigate(`/employer/employees/${emp.id}`)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td style={{ fontWeight: 500, padding: "8px 10px" }}>{emp.first_name} {emp.name}</td>
+                        <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>{emp.email}</td>
                       </tr>
                     ))}
                 </tbody>

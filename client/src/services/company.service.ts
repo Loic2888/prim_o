@@ -21,6 +21,14 @@ export const companyService = {
     return data.data;
   },
 
+  // Public — name only, for the QR-code registration flow (no auth required)
+  async getPublicById(id: string): Promise<{ id: string; name: string }> {
+    const { data } = await api.get<ApiResponse<{ id: string; name: string }>>(
+      `/companies/${id}/public`,
+    );
+    return data.data;
+  },
+
   async create(payload: CreateCompanyPayload): Promise<Company> {
     const { data } = await api.post<ApiResponse<Company>>(
       "/companies",
@@ -41,12 +49,12 @@ export const companyService = {
   },
 
   async delete(id: string): Promise<void> {
-    await api.delete(`/api/companies/${id}`);
+    await api.delete(`/companies/${id}`);
   },
 
   async grantTokens(id: string, amount: number): Promise<{ company_id: string; amount: number; new_balance: number }> {
     const { data } = await api.post<ApiResponse<{ company_id: string; amount: number; new_balance: number }>>(
-      `/api/companies/${id}/tokens`,
+      `/companies/${id}/tokens`,
       { amount }
     );
     return data.data;

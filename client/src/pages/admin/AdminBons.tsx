@@ -372,7 +372,7 @@ export default function AdminBons() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
           <h1>Bons d'achat</h1>
           <p>Gestion du catalogue et suivi des rachats</p>

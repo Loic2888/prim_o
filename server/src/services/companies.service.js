@@ -29,6 +29,13 @@ const getById = async (id) => {
   return company;
 };
 
+// Public — minimal, non-sensitive info for the QR-code registration flow
+const getPublicById = async (id) => {
+  const company = await Company.findByPk(id, { attributes: ['id', 'name'] });
+  if (!company) throw httpError('Company not found', 404);
+  return { id: company.id, name: company.name };
+};
+
 const list = async () => Company.findAll({ order: [['name', 'ASC']] });
 
 const update = async (id, body, requesterId, requesterRole) => {
@@ -99,4 +106,4 @@ const grantTokens = async (companyId, amount) => {
   }
 };
 
-module.exports = { create, getById, list, update, remove, grantTokens };
+module.exports = { create, getById, getPublicById, list, update, remove, grantTokens };

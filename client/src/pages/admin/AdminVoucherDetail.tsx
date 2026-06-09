@@ -122,7 +122,7 @@ export default function AdminVoucherDetail() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
           <h1>{voucher.partner}</h1>
           <p>{voucher.title}</p>

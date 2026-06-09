@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { marketplaceService } from '../services/marketplace.service';
 import { useCart } from '../hooks/useCart';
@@ -18,6 +18,19 @@ export default function Panier() {
   }, []);
 
   const cartVouchers = allVouchers.filter((v) => isInCart(v.id));
+
+  const handleRedeemAll = useCallback(async () => {
+    const redeemable = allVouchers
+      .filter((v) => isInCart(v.id) && v.available && (user?.token_balance ?? 0) >= v.token_cost);
+    for (const v of redeemable) await handleRedeem(v);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allVouchers, user?.token_balance]);
+
+  useEffect(() => {
+    const handler = () => { handleRedeemAll(); };
+    window.addEventListener('panier:validate', handler);
+    return () => window.removeEventListener('panier:validate', handler);
+  }, [handleRedeemAll]);
 
   async function handleRedeem(voucher: Voucher) {
     setError('');
@@ -42,13 +55,12 @@ export default function Panier() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Panier</h1>
-        <p>Vos bons d'achat sauvegardés</p>
+      <div className="page-header page-header--centered">
+        <h1>Vos bons d'achat sauvegardés</h1>
       </div>
 
-      {/* Solde */}
-      <div className="stat-card" style={{ marginBottom: 24, display: 'inline-flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
+      {/* Solde — masqué sur desktop (affiché dans la TopNav) */}
+      <div className="stat-card panier-desktop-hidden" style={{ marginBottom: 24, display: 'inline-flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
         <p className="stat-label">Solde disponible</p>
         <p className="stat-value">{user?.token_balance ?? 0}</p>
         <p className="stat-sub">tokens</p>
@@ -125,7 +137,7 @@ export default function Panier() {
         </div>
       )}
 
-      {/* Acheter le panier — toujours visible */}
+      {/* Valider le panier — masqué sur desktop (affiché dans la TopNav) */}
       {(() => {
         const hasItems = cartVouchers.length > 0;
         const canBuy = hasItems && !redeeming && cartVouchers.some(
@@ -133,21 +145,16 @@ export default function Panier() {
         );
         return (
           <button
-            className="btn btn-primary btn-full"
+            className="btn btn-primary btn-full panier-desktop-hidden"
             style={{
               marginTop: 16,
               opacity: canBuy ? 1 : 0.45,
               cursor: canBuy ? 'pointer' : 'not-allowed',
             }}
             disabled={!canBuy}
-            onClick={async () => {
-              const redeemable = cartVouchers.filter(
-                v => v.available && (user?.token_balance ?? 0) >= v.token_cost
-              );
-              for (const v of redeemable) await handleRedeem(v);
-            }}
+            onClick={handleRedeemAll}
           >
-            Acheter le panier
+            Valider le panier
           </button>
         );
       })()}

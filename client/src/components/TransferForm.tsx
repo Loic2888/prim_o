@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { User } from "../types";
 import { tokenService } from "../services/token.service";
+import { useAuth } from "../context/AuthContext";
 
 interface Props {
   employees: User[];
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function TransferForm({ employees, onSuccess }: Props) {
+  const { refreshCompany } = useAuth();
   const [receiverId, setReceiverId] = useState("");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
@@ -31,6 +33,7 @@ export default function TransferForm({ employees, onSuccess }: Props) {
       setAmount("");
       setReason("");
       onSuccess();
+      refreshCompany();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } };
       setError(

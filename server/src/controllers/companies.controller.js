@@ -18,6 +18,15 @@ const getById = async (req, res, next) => {
   }
 };
 
+const getPublicById = async (req, res, next) => {
+  try {
+    const data = await companiesService.getPublicById(req.params.id);
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const list = async (req, res, next) => {
   try {
     const data = await companiesService.list();
@@ -60,4 +69,4 @@ const grantTokens = async (req, res, next) => {
   }
 };
 
-module.exports = { create, getById, list, update, remove, grantTokens };
+module.exports = { create, getById, getPublicById, list, update, remove, grantTokens };

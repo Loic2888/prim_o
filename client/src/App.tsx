@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import EmployerDashboard from './pages/employer/EmployerDashboard';
+import EmployeeDetail from './pages/employer/EmployeeDetail';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminBons from './pages/admin/AdminBons';
 import AdminStats from './pages/admin/AdminStats';
@@ -60,6 +61,11 @@ export default function App() {
           <Route path="/employer/dashboard" element={
             <ProtectedRoute allowedRoles={['employer']}>
               <Layout><EmployerDashboard /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/employer/employees/:id" element={
+            <ProtectedRoute allowedRoles={['employer']}>
+              <Layout><EmployeeDetail /></Layout>
             </ProtectedRoute>
           } />
 

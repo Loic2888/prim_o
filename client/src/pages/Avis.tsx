@@ -7,14 +7,16 @@ export default function Avis() {
 
   return (
     <div>
-      <div className="faq-topbar">
+      <div className="page-header">
+        <div>
+          <h1>Nous noter</h1>
+        </div>
         <button className="back-btn" onClick={() => navigate(from, { state: { reopenMenu: true } })}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
           Retour
         </button>
-        <h1 className="faq-topbar-title">Nous noter</h1>
       </div>
 
       <div className="card" style={{ marginTop: 16 }}>

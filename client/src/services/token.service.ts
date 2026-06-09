@@ -9,22 +9,22 @@ interface AllocatePayload {
 
 export const tokenService = {
   async allocate(payload: AllocatePayload): Promise<TokenTransaction> {
-    const { data } = await api.post<ApiResponse<TokenTransaction>>('/api/tokens/allocate', payload);
+    const { data } = await api.post<ApiResponse<TokenTransaction>>('/tokens/allocate', payload);
     return data.data;
   },
 
   async getBalance(userId: string): Promise<number> {
-    const { data } = await api.get<ApiResponse<{ token_balance: number }>>(`/api/tokens/balance/${userId}`);
+    const { data } = await api.get<ApiResponse<{ token_balance: number }>>(`/tokens/balance/${userId}`);
     return data.data.token_balance;
   },
 
   async getTransactions(params?: { userId?: string; type?: string }): Promise<TokenTransaction[]> {
-    const { data } = await api.get<ApiResponse<TokenTransaction[]>>('/api/tokens/transactions', { params });
+    const { data } = await api.get<ApiResponse<TokenTransaction[]>>('/tokens/transactions', { params });
     return data.data;
   },
 
   async getTransactionById(id: string): Promise<TokenTransaction> {
-    const { data } = await api.get<ApiResponse<TokenTransaction>>(`/api/tokens/transactions/${id}`);
+    const { data } = await api.get<ApiResponse<TokenTransaction>>(`/tokens/transactions/${id}`);
     return data.data;
   },
 };

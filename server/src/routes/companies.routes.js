@@ -27,6 +27,13 @@ const companyBodyRules = [
 // Public — employer self-onboarding: create company first, then POST /auth/register with returned id
 router.post('/', companyBodyRules, validate, companiesController.create);
 
+// Public — minimal company info (name) for the QR-code registration flow
+router.get(
+  '/:id/public',
+  [param('id').isUUID().withMessage('id must be a valid UUID'), validate],
+  companiesController.getPublicById
+);
+
 // Admin only — list all companies
 router.get('/', verifyToken, roleGuard('admin'), companiesController.list);
 

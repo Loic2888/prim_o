@@ -147,7 +147,7 @@ function CarouselRow({
 
 /* ── Page ── */
 export default function PourToi() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [vouchers, setVouchers]     = useState<Voucher[]>([]);
   const [orders, setOrders]         = useState<Redemption[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -169,6 +169,7 @@ export default function PourToi() {
       const { promo_code } = await marketplaceService.redeem(voucher.id);
       setPromoCodes((p) => ({ ...p, [voucher.id]: promo_code }));
       setVouchers((vs) => vs.map((v) => v.id === voucher.id ? { ...v, available: false } : v));
+      refreshUser();
     } catch {
       // balance error handled by disabled state
     } finally {
@@ -211,9 +212,8 @@ export default function PourToi() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Pour toi</h1>
-        <p>Tes offres et tes bons d'achat</p>
+      <div className="page-header page-header--centered">
+        <h1>Tes offres et tes bons d'achat</h1>
       </div>
 
       {/* Carousel offres du moment */}

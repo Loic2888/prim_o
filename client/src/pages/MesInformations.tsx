@@ -14,6 +14,7 @@ export default function MesInformations() {
   const [name, setName]           = useState(user?.name ?? '');
   const [email, setEmail]         = useState(user?.email ?? '');
   const [company, setCompany]     = useState('');
+  const [siret, setSiret]         = useState('');
 
   const [saving, setSaving]   = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
@@ -25,7 +26,7 @@ export default function MesInformations() {
 
   useEffect(() => {
     if (user?.company_id) {
-      companyService.getById(user.company_id).then((c) => setCompany(c.name)).catch(() => {});
+      companyService.getById(user.company_id).then((c) => { setCompany(c.name); setSiret(c.siret ?? ''); }).catch(() => {});
     }
   }, [user?.company_id]);
 
@@ -49,7 +50,7 @@ export default function MesInformations() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
           <h1>Mes informations</h1>
           <p>Vos informations personnelles</p>
@@ -91,6 +92,13 @@ export default function MesInformations() {
             <span className="info-field-label">Entreprise</span>
             <span className="info-field-value">{company || '—'}</span>
           </div>
+
+          {user?.role === 'employer' && (
+            <div className="info-field-card">
+              <span className="info-field-label">SIRET</span>
+              <span className="info-field-value">{siret || '—'}</span>
+            </div>
+          )}
 
           <div className="info-field-card">
             <label className="info-field-label" htmlFor="email">Email</label>

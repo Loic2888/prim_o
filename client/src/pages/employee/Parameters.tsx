@@ -66,7 +66,7 @@ export default function Parameters() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
           <h1>Paramètres</h1>
           <p>Préférences et compte</p>

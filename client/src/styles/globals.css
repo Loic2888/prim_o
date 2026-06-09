@@ -326,6 +326,11 @@ a:hover {
 }
 
 /* "Voir plus" button in TopNav */
+.top-nav-more-wrap {
+  position: relative;
+  margin-left: auto;
+}
+
 .top-nav-more-btn {
   display: flex;
   align-items: center;
@@ -340,9 +345,20 @@ a:hover {
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
-  margin-left: auto;
 }
 .top-nav-more-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+.top-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+@media (min-width: 1024px) {
+  .panier-desktop-hidden { display: none !important; }
+}
 
 /* ═══════════════════════════════════════════════════════════
    BOTTOM NAV — floating pill (mobile only, <1024px)
@@ -866,7 +882,12 @@ a:hover {
 ═══════════════════════════════════════════════════════════ */
 .page-header {
   margin: 0 calc(-1 * var(--page-px)) 24px;
-  padding: 20px var(--page-px) 18px;
+  padding: 0 var(--page-px);
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
   background-color: var(--primary);
   background-image: repeating-linear-gradient(
     45deg,
@@ -875,14 +896,25 @@ a:hover {
     transparent 2px,
     transparent 18px
   );
-  text-align: center;
+  text-align: left;
 }
 @media (min-width: 768px) {
-  .page-header { margin: 0 -32px 32px; padding: 24px 32px 20px; }
+  .page-header { margin: 0 -32px 32px; padding: 0 32px; min-height: 140px; }
 }
 @media (min-width: 1024px) {
-  .page-header { margin: 0 -40px 32px; padding: 24px 40px 20px; }
+  .page-header { margin: 0 -40px 32px; padding: 0 40px; }
 }
+
+.page-header--centered {
+  justify-content: center;
+  text-align: center;
+}
+.page-header--centered h1,
+.page-header--centered p {
+  text-align: center;
+  width: 100%;
+}
+
 .page-header h1 {
   font-size: 1.35rem;
   font-weight: 800;
@@ -896,6 +928,13 @@ a:hover {
 }
 @media (min-width: 768px) {
   .page-header h1 { font-size: 1.6rem; }
+}
+
+.page-header .back-btn {
+  position: absolute;
+  right: var(--page-px);
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .back-btn {
@@ -973,9 +1012,13 @@ a:hover {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   GRID — 2 col mobile → expand on larger screens
+   GRID — single col mobile → expand on larger screens
 ═══════════════════════════════════════════════════════════ */
-.grid-2,
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -987,7 +1030,6 @@ a:hover {
     gap: 16px;
   }
   .grid-3 {
-    grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
 }
@@ -999,6 +1041,12 @@ a:hover {
   .grid-2 {
     gap: 20px;
   }
+}
+
+/* Les enfants directs peuvent rétrécir en dessous de leur contenu */
+.grid-2 > *,
+.grid-3 > * {
+  min-width: 0;
 }
 
 /* Dans une grille, les cartes s'étirent sur toute la cellule */
@@ -1042,6 +1090,24 @@ a:hover {
 }
 .table tbody tr:hover td {
   background: var(--primary-light);
+}
+.btn-delete-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-delete-row:hover {
+  color: var(--danger);
+  background: var(--danger-light);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1304,17 +1370,20 @@ a:hover {
   color: var(--primary);
   margin-bottom: 6px;
   letter-spacing: -0.03em;
+  text-align: center;
 }
 .auth-title {
   font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 4px;
   color: var(--text);
+  text-align: center;
 }
 .auth-subtitle {
   font-size: 0.875rem;
   color: var(--text-muted);
   margin-bottom: 24px;
+  text-align: center;
 }
 .auth-footer {
   margin-top: 20px;
