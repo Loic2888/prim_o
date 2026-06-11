@@ -4,6 +4,7 @@ import { marketplaceService } from '../services/marketplace.service';
 import { useFavorites } from '../hooks/useFavorites';
 import { useCart } from '../hooks/useCart';
 import type { Voucher, Redemption } from '../types';
+import { fmtShort } from '../utils/date';
 
 const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
 
@@ -210,9 +211,7 @@ export default function PourToi() {
     ...recentFill.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
   ];
 
-  function fmt(date: string) {
-    return new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-  }
+  const fmt = fmtShort;
 
   return (
     <div>

@@ -109,3 +109,20 @@ export interface AdminRedemption {
   user: { id: string; first_name: string; name: string; email: string };
   voucher: { id: string; partner: string; title: string; token_cost: number };
 }
+
+export interface ScheduledAllocation {
+  id: string;
+  company_id: string;
+  sender_id: string;
+  receiver_id: string | null;
+  amount: number;
+  label: string | null;
+  frequency: 'monthly' | 'annual';
+  day_of_month: number;
+  month: number | null;
+  next_run_at: string;
+  active: boolean;
+  excluded_user_ids: string[];
+  created_at: string;
+  receiver?: { id: string; first_name: string; name: string; email: string } | null;
+}

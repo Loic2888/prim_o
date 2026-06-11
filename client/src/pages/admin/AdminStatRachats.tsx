@@ -2,10 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { marketplaceService } from '../../services/marketplace.service';
 import type { AdminVoucher, AdminRedemption } from '../../types';
-
-function fmt(date: string) {
-  return new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
-}
+import { fmtShort as fmt } from '../../utils/date';
 
 type Period = '30j' | '90j' | 'tout';
 

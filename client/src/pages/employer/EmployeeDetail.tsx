@@ -2,14 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { userService } from "../../services/user.service";
 import type { User, TokenTransaction } from "../../types";
-
-function fmt(date: string) {
-  return new Date(date).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-}
+import { fmt } from "../../utils/date";
 
 function IconArrowLeft() {
   return (

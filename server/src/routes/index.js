@@ -7,6 +7,7 @@ const marketplaceRoutes = require('./marketplace.routes');
 const companiesRoutes = require('./companies.routes');
 const uploadRoutes = require('./upload.routes');
 const favoritesRoutes = require('./favorites.routes');
+const scheduledRoutes = require('./scheduled.routes');
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use('/marketplace', marketplaceRoutes);
 router.use('/companies', companiesRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/favorites', favoritesRoutes);
+router.use('/scheduled-allocations', scheduledRoutes);
 
 module.exports = router;

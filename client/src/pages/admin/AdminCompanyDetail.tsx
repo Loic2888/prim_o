@@ -4,10 +4,7 @@ import { companyService } from '../../services/company.service';
 import { userService } from '../../services/user.service';
 import { tokenService } from '../../services/token.service';
 import type { Company, User } from '../../types';
-
-function fmt(date: string) {
-  return new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-}
+import { fmt } from '../../utils/date';
 
 export default function AdminCompanyDetail() {
   const { id } = useParams<{ id: string }>();

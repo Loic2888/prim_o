@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { userService } from '../../services/user.service';
 import type { TokenTransaction } from '../../types';
+import { fmtShort } from '../../utils/date';
 
 export default function Profil() {
   const { user, refreshUser } = useAuth();
@@ -127,7 +128,7 @@ export default function Profil() {
                         {tx.reason}
                       </td>
                       <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                        {new Date(tx.created_at).toLocaleDateString('fr-FR')}
+                        {fmtShort(tx.created_at)}
                       </td>
                     </tr>
                   ))}

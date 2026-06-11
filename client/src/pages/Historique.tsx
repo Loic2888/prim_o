@@ -4,16 +4,9 @@ import { userService } from '../services/user.service';
 import { marketplaceService } from '../services/marketplace.service';
 import { tokenService } from '../services/token.service';
 import type { TokenTransaction, Redemption } from '../types';
+import { fmtShort as fmt } from '../utils/date';
 
 type Tab = 'tokens' | 'achats' | 'equipe';
-
-function fmt(date: string) {
-  return new Date(date).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
 
 export default function Historique() {
   const { user, company } = useAuth();

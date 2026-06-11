@@ -1,0 +1,57 @@
+databases:
+  - name: primo-db
+    databaseName: primo
+    user: primo
+    plan: free
+
+services:
+  # ── Backend API (Node.js / Express) ──────────────────────────
+  - type: web
+    name: primo-api
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    dockerBuildTarget: production
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: primo-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: STRIPE_SECRET_KEY
+        sync: false            # à renseigner manuellement dans le dashboard Render
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CLIENT_URL
+        sync: false            # URL du frontend Vercel, à renseigner après déploiement
+
+  # ── Frontend React (build statique → Vercel recommandé) ──────
+  # Le frontend est déployé sur Vercel — voir client/.env.example
+  # Si tu veux tout héberger sur Render, décommente le bloc ci-dessous :
+  #
+  # - type: web
+  #   name: primo-client
+  #   runtime: docker
+  #   dockerfilePath: ./client/Dockerfile
+  #   dockerContext: ./client
+  #   plan: free
+  #   envVars:
+  #     - key: VITE_API_URL
+  #       fromService:
+  #         name: primo-api
+  #         type: web
+  #         property: host
+  #     - key: VITE_STRIPE_PUBLIC_KEY
+  #       sync: false

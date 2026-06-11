@@ -7,6 +7,7 @@ const { TokenTransaction, initTokenTransaction } = require('./TokenTransaction')
 const { Voucher, initVoucher } = require('./Voucher');
 const { Redemption, initRedemption } = require('./Redemption');
 const { Favorite, initFavorite } = require('./Favorite');
+const { ScheduledAllocation, initScheduledAllocation } = require('./ScheduledAllocation');
 
 // 2. Initialize everything with the database instance
 initCompany(sequelize);
@@ -15,6 +16,7 @@ initTokenTransaction(sequelize);
 initVoucher(sequelize);
 initRedemption(sequelize);
 initFavorite(sequelize);
+initScheduledAllocation(sequelize);
 
 // 3. Define associations
 Company.hasMany(User, { foreignKey: 'company_id', as: 'users' });
@@ -41,6 +43,15 @@ Favorite.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Voucher.hasMany(Favorite, { foreignKey: 'voucher_id', as: 'favorites' });
 Favorite.belongsTo(Voucher, { foreignKey: 'voucher_id', as: 'voucher' });
 
+Company.hasMany(ScheduledAllocation, { foreignKey: 'company_id', as: 'scheduled_allocations' });
+ScheduledAllocation.belongsTo(Company, { foreignKey: 'company_id', as: 'company' });
+
+User.hasMany(ScheduledAllocation, { foreignKey: 'sender_id', as: 'sent_scheduled_allocations' });
+ScheduledAllocation.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
+
+User.hasMany(ScheduledAllocation, { foreignKey: 'receiver_id', as: 'received_scheduled_allocations' });
+ScheduledAllocation.belongsTo(User, { foreignKey: 'receiver_id', as: 'receiver' });
+
 module.exports = {
   sequelize,
   Company,
@@ -49,4 +60,5 @@ module.exports = {
   Voucher,
   Redemption,
   Favorite,
+  ScheduledAllocation,
 };

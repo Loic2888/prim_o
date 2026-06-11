@@ -3,14 +3,15 @@ import { useAuth } from '../context/AuthContext';
 import { marketplaceService } from '../services/marketplace.service';
 import { useCart } from '../hooks/useCart';
 import type { Voucher } from '../types';
+import { fmtShort } from '../utils/date';
 
 export default function Panier() {
   const { user, refreshUser } = useAuth();
-  const { saved, remove, isInCart } = useCart();
+  const { remove, isInCart, addedAt } = useCart();
   const [allVouchers, setAllVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [promoCodes, setPromoCodes] = useState<Record<string, string>>({});
+  const [promoCodes, setPromoCodes] = useState<Record<string, { code: string; redeemed_at: string }>>({});
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function Panier() {
     setRedeeming(voucher.id);
     try {
       const { promo_code } = await marketplaceService.redeem(voucher.id);
-      setPromoCodes((prev) => ({ ...prev, [voucher.id]: promo_code }));
+      setPromoCodes((prev) => ({ ...prev, [voucher.id]: { code: promo_code, redeemed_at: new Date().toISOString() } }));
       remove(voucher.id);
       setAllVouchers((prev) =>
         prev.map((v) => (v.id === voucher.id ? { ...v, available: false } : v)),
@@ -74,9 +75,10 @@ export default function Panier() {
           <p style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--success)', marginBottom: 12 }}>
             Codes obtenus
           </p>
-          {Object.entries(promoCodes).map(([id, code]) => (
+          {Object.entries(promoCodes).map(([id, { code, redeemed_at }]) => (
             <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <span className="promo-code">{code}</span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{fmtShort(redeemed_at)}</span>
             </div>
           ))}
         </div>
@@ -99,6 +101,9 @@ export default function Panier() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 2 }}>{v.partner}</p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{v.title}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.68rem', marginTop: 2 }}>
+                  Ajouté le {fmtShort(addedAt(v.id))}
+                </p>
               </div>
               <span className="token-badge">{v.token_cost}</span>
               {!v.available ? (
