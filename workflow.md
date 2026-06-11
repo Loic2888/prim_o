@@ -579,3 +579,34 @@ docker compose down -v
 # Relancer l'environnement à neuf (les scripts SQL seront rejoués)
 docker compose up --build
 ```
+
+---
+
+## Comptes de démonstration (base Render — production)
+
+Mot de passe pour tous les comptes : `admin123456789`
+
+### Admin
+| Email | Rôle |
+|---|---|
+| admin123@admin.com | admin |
+
+### Employeurs
+| Email | Entreprise |
+|---|---|
+| pierre.dupont@leclerc-demo.fr | Leclerc |
+| marie.garcia@aldi-demo.fr | Aldi |
+| paul.thomas@amazon-demo.fr | Amazon |
+
+### Employés
+| Email | Entreprise |
+|---|---|
+| sophie.martin@leclerc-demo.fr | Leclerc |
+| lucas.bernard@leclerc-demo.fr | Leclerc |
+| emma.dubois@leclerc-demo.fr | Leclerc |
+| hugo.petit@aldi-demo.fr | Aldi |
+| camille.leroy@aldi-demo.fr | Aldi |
+| nathan.moreau@aldi-demo.fr | Aldi |
+| lea.simon@amazon-demo.fr | Amazon |
+| tom.laurent@amazon-demo.fr | Amazon |
+| jade.michel@amazon-demo.fr | Amazon |
