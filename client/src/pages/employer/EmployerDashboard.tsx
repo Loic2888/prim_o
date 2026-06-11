@@ -480,7 +480,7 @@ export default function EmployerDashboard() {
                     value={schedForm.day_of_month}
                     onChange={(e) => {
                       const val = e.target.value.replace(/[^0-9]/g, '');
-                      if (val === '' || (parseInt(val) >= 1 && parseInt(val) <= 28)) {
+                      if (val === '' || (parseInt(val) >= 1 && parseInt(val) <= 31)) {
                         setSchedForm({ ...schedForm, day_of_month: val });
                       }
                     }}
