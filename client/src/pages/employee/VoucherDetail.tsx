@@ -70,12 +70,13 @@ export default function VoucherDetail() {
   if (notFound || !voucher) {
     return (
       <div>
-        <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => navigate('/catalogue')}
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="page-header">
+          <div>
+            <h1>Offre introuvable</h1>
+          </div>
+          <button className="back-btn" onClick={() => navigate('/catalogue')}>
             <IconChevronLeft /> Retour
           </button>
-          <h1 style={{ margin: 0 }}>Offre introuvable</h1>
         </div>
         <p className="empty-state">Ce bon d'achat n'existe plus.</p>
       </div>
@@ -93,12 +94,13 @@ export default function VoucherDetail() {
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button className="btn btn-secondary btn-sm" onClick={() => navigate(-1)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div className="page-header">
+        <div>
+          <h1>Détail de l'offre</h1>
+        </div>
+        <button className="back-btn" onClick={() => navigate(-1)}>
           <IconChevronLeft /> Retour
         </button>
-        <h1 style={{ margin: 0 }}>Détail de l'offre</h1>
       </div>
 
       <div className="card" style={{ maxWidth: 560, margin: '0 auto', overflow: 'hidden' }}>
