@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { marketplaceService } from '../services/marketplace.service';
 import { useFavorites } from '../hooks/useFavorites';
 import { useCart } from '../hooks/useCart';
+import { resolveImageUrl } from '../utils/imageUrl';
 import type { Voucher, Redemption } from '../types';
 import { fmtShort } from '../utils/date';
-
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
 
 /* ── Icons ── */
 function IconHeart({ filled }: { filled: boolean }) {
@@ -49,11 +49,21 @@ function VoucherCard({
   inCart: boolean;
   onCartToggle: (id: string) => void;
 }) {
+  const navigate = useNavigate();
+  const imgSrc = resolveImageUrl(voucher.images?.[0]);
+
   return (
-    <div className="voucher-card-carousel">
-      {voucher.images?.[0] ? (
+    <div
+      className="voucher-card-carousel"
+      style={{ cursor: 'pointer' }}
+      onClick={() => navigate(`/catalogue/offre/${voucher.id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/catalogue/offre/${voucher.id}`); }}
+    >
+      {imgSrc ? (
         <div className="voucher-card-image">
-          <img src={`${API_URL}${voucher.images[0]}`} alt={voucher.partner} />
+          <img src={imgSrc} alt={voucher.partner} />
         </div>
       ) : (
         <div className="voucher-card-image voucher-card-image--placeholder">
@@ -73,25 +83,13 @@ function VoucherCard({
         </button>
       </div>
       <p className="voucher-card-carousel-title">{voucher.title}</p>
-      <div className="voucher-card-carousel-footer">
-        <span className="token-badge">{voucher.token_cost}</span>
+      <div className="voucher-card-carousel-footer" style={{ justifyContent: 'flex-end' }}>
         {promoCode ? (
-          <span className="promo-code" style={{ fontSize: '0.72rem' }}>{promoCode}</span>
+          <span className="promo-code" style={{ fontSize: '0.72rem', marginRight: 'auto' }}>{promoCode}</span>
         ) : !voucher.available ? (
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Indisponible</span>
-        ) : canAfford ? (
-          <button className="btn btn-primary btn-sm" disabled={redeeming} onClick={() => onRedeem(voucher)}>
-            {redeeming ? '…' : 'Racheter'}
-          </button>
-        ) : (
-          <button
-            className="btn btn-outline btn-sm"
-            style={inCart ? { background: 'var(--primary-light)', fontWeight: 700 } : {}}
-            onClick={(e) => { e.stopPropagation(); onCartToggle(voucher.id); }}
-          >
-            {inCart ? '✓ Sauvé' : '+ Panier'}
-          </button>
-        )}
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginRight: 'auto' }}>Indisponible</span>
+        ) : null}
+        <span className="token-badge">{voucher.token_cost}</span>
       </div>
     </div>
   );
@@ -148,7 +146,7 @@ function CarouselRow({
 
 /* ── Page ── */
 export default function PourToi() {
-  const { user, refreshUser } = useAuth();
+  const { user, company, refreshUser, refreshCompany } = useAuth();
   const [vouchers, setVouchers]     = useState<Voucher[]>([]);
   const [orders, setOrders]         = useState<Redemption[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -170,7 +168,11 @@ export default function PourToi() {
       const { promo_code } = await marketplaceService.redeem(voucher.id);
       setPromoCodes((p) => ({ ...p, [voucher.id]: promo_code }));
       setVouchers((vs) => vs.map((v) => v.id === voucher.id ? { ...v, available: false } : v));
-      refreshUser();
+      if (user?.role === 'employer') {
+        await refreshCompany();
+      } else {
+        await refreshUser();
+      }
     } catch {
       // balance error handled by disabled state
     } finally {
@@ -180,7 +182,7 @@ export default function PourToi() {
 
   if (loading) return <div style={{ padding: 32, color: 'var(--text-muted)' }}>Chargement…</div>;
 
-  const balance = user?.token_balance ?? 0;
+  const balance = user?.role === 'employer' ? (company?.token_balance ?? 0) : (user?.token_balance ?? 0);
 
   const available = vouchers.filter((v) => v.available);
 

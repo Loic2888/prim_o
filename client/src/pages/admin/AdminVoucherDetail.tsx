@@ -3,8 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { marketplaceService } from '../../services/marketplace.service';
 import { VOUCHER_CATEGORIES } from '../../types';
 import type { Voucher, VoucherCategory } from '../../types';
-
-const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000';
+import { resolveImageUrl } from '../../utils/imageUrl';
 
 export default function AdminVoucherDetail() {
   const { id } = useParams<{ id: string }>();
@@ -139,8 +138,32 @@ export default function AdminVoucherDetail() {
 
   return (
     <div>
+      <style>{`
+        .page-header .back-btn {
+          position: absolute !important;
+          right: 24px !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+          background-color: transparent !important;
+          color: white !important;
+          border-color: white !important;
+        }
+        @media (min-width: 768px) {
+          .page-header .back-btn {
+            right: 32px !important;
+          }
+        }
+        @media (min-width: 1024px) {
+          .page-header .back-btn {
+            right: 40px !important;
+          }
+        }
+        .page-header .back-btn:hover {
+          background-color: rgba(255, 255, 255, 0.15) !important;
+        }
+      `}</style>
       <div className="page-header">
-        <div>
+        <div style={{ width: '100%', textAlign: 'center' }}>
           <h1>{voucher.partner}</h1>
           <p>{voucher.title}</p>
         </div>
@@ -213,7 +236,7 @@ export default function AdminVoucherDetail() {
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
                 {images.map((url, i) => (
                   <div key={url} style={{ position: 'relative' }}>
-                    <img src={`${API_URL}${url}`} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
+                    <img src={resolveImageUrl(url)} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }} />
                     <button type="button" onClick={() => removeExisting(i)} style={{
                       position: 'absolute', top: -6, right: -6, width: 20, height: 20,
                       borderRadius: '50%', background: '#dc2626', color: '#fff',
