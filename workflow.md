@@ -568,6 +568,44 @@ Cette branche améliore le processus d'onboarding des salariés en permettant au
 
 ---
 
+## Catalogue : images, fiche détail & seed local — 12/06/26 (fait par Loïc)
+
+**Correction des images de bons (catalogue & co)**
+
+- Bug : les images en URL absolue (`https://picsum.photos/...` du seed) étaient préfixées par `API_URL` → URL cassée (`http://localhost:5000https://...`)
+- Nouvel utilitaire `client/src/utils/imageUrl.ts` → `resolveImageUrl()` : préfixe l'API uniquement pour les chemins relatifs (`/uploads/...`), laisse passer les URLs absolues et data-URI
+- Appliqué dans `Catalogue`, `CategorieDetail`, `PourToi`, `AdminBons`, `AdminVoucherDetail`
+
+**Fiche détail d'une offre (nouvelle page)**
+
+- Nouvelle page `client/src/pages/employee/VoucherDetail.tsx`, route `/catalogue/offre/:id`
+- Affiche image, partenaire, titre, catégorie, coût en tokens, solde utilisateur
+- Trois actions : **Acheter** (rachat → affiche le code promo), **Ajouter au panier**, **Favoris** (cœur)
+- Les cartes de bons (Catalogue, carrousels par catégorie, Pour toi) sont désormais **cliquables** → ouvrent la fiche (les boutons internes utilisent `stopPropagation`) ; pour un admin le clic mène vers `/admin/bons/:id`
+
+**Correctif backend — accès employeur à la fiche**
+
+- `GET /api/marketplace/items/:id` n'autorisait que `employee` et `admin` → un **employeur** recevait un 403 (« Offre introuvable »)
+- Ajout de `employer` au `roleGuard` (la liste du catalogue était déjà ouverte à tous)
+- Bouton « Retour » de la fiche repassé sur la classe `.back-btn` (blanc sur fond vert) au lieu du bouton sombre
+
+**Déploiement**
+
+- Découverte : la branche locale `main` suivait `origin` = le **dépôt de Véronique**, alors que Render/Vercel déploient depuis le **fork `Loic2888/prim_o`** → un push « simple » partait au mauvais endroit
+- Bon réflexe : `git push monfork main` pour publier sur le fork suivi par Render/Vercel
+- Vérifié que Vercel pointe bien sur le fork et que le déploiement de prod était à jour
+
+**Seed de la base Docker locale (pour développer sur des données réalistes)**
+
+- Choix : copier le jeu de données dans la base locale plutôt que connecter le Docker à la base Render (zéro risque pour la prod)
+- `server/scripts/seed-data.js` : données de démo (entreprises, comptes, 90 bons) extraites en module pur partagé
+- `server/scripts/seed-local.js` : seed de la base **locale sans SSL** (ne force pas `NODE_ENV=production`, contrairement à `seed-full.js` prévu pour Render qui exige le SSL)
+- `seed-full.js` refactorisé pour réutiliser `seed-data.js` (comportement Render inchangé, plus de duplication)
+- Résultat en local : **13 comptes** (1 admin, 3 employeurs, 9 employés — cf. liste plus bas) + **3 entreprises** + **90 bons** (10 par catégorie sur 9 catégories, une image chacun)
+- Commande pour rejouer le seed : `node server/scripts/seed-local.js`
+
+---
+
 ## TODO
 
 - [ ] **Nettoyer les contraintes UNIQUE dupliquées sur `users.email`** — la table contient ~22 index `users_email_keyX` identiques, probablement générés par des migrations Sequelize rejouées en boucle. À corriger via une migration qui supprime les doublons et ne conserve qu'un seul `UNIQUE` sur `email`.
