@@ -7,6 +7,7 @@ import { userService } from '../services/user.service';
 import { useFavorites } from '../hooks/useFavorites';
 import { useCart } from '../hooks/useCart';
 import { resolveImageUrl } from '../utils/imageUrl';
+import { getCategory, getCategoryColor } from '../utils/category';
 import type { Voucher, Redemption, Team, ScheduledAllocation, User, TokenTransaction } from '../types';
 import { fmtShort } from '../utils/date';
 
@@ -112,11 +113,12 @@ function VoucherCard({
 }) {
   const navigate = useNavigate();
   const imgSrc = resolveImageUrl(voucher.images?.[0]);
+  const catColor = getCategoryColor(getCategory(voucher));
 
   return (
     <div
       className="voucher-card-carousel"
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', backgroundColor: catColor.light }}
       onClick={() => navigate(`/catalogue/offre/${voucher.id}`)}
       role="button"
       tabIndex={0}
@@ -793,121 +795,83 @@ function EmployeePourToi() {
     <div>
       {/* ══ Teal hero ══ */}
       <div className="pour-toi-hero">
-        {/* Greeting — top row */}
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 500, marginBottom: 2 }}>
-            prim'O
-          </p>
-          <h1 style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.75rem', letterSpacing: '-0.02em' }}>
-            Bonjour, {user?.first_name} !
-          </h1>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 0 }}>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+            <span style={{ fontFamily: "'Pacifico', cursive", fontWeight: 400, fontSize: '2.4rem', color: '#ffffff', letterSpacing: '0.5px' }}>prim'</span>
+            <span style={{ fontFamily: "'Pacifico', cursive", fontWeight: 400, fontSize: '3.6rem', color: '#f0a800', lineHeight: 1 }}>o</span>
+          </span>
         </div>
 
-        {/* Two-column: left = avatar placeholder, right = coin + balance */}
+        {/* Two-column: left = avatar placeholder, right = coin + stock */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Left — avatar area (client will provide asset) */}
           <div style={{ flex: 1 }} />
 
-          {/* Right — coin + balance bubble */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 16 }}>
-            <CoinSVG size={100} />
-            <div style={{
-              background: '#ffffff', borderRadius: 999,
-              padding: '14px 32px', textAlign: 'right',
-              boxShadow: '0 6px 32px rgba(0,0,0,0.18)',
-            }}>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>
+          {/* Right — coin + token count window */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, transform: 'translateY(55px)' }}>
+            <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.2rem', marginBottom: 4, letterSpacing: '0.02em', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+              Bonjour, {user?.first_name} !
+            </span>
+            {/* Token Image from client/public/icons */}
+            <img 
+              src="/icons/token-logo-SF.png" 
+              alt="Token" 
+              style={{ width: '140px', height: '140px', objectFit: 'contain', filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.4))', zIndex: 2, marginBottom: '-20px' }} 
+            />
+            <div style={{ background: '#303236', border: '3px solid #ffffff', borderRadius: '16px', padding: '18px 24px 10px 24px', textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', minWidth: '180px' }}>
+              <p style={{ color: '#ffffff', fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>
                 {balance}
-              </div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginTop: 4 }}>
-                Tokens dispos
-              </div>
+              </p>
+              <p style={{ color: '#ffffff', fontSize: '0.82rem', fontWeight: 500, marginTop: 4, opacity: 0.8 }}>
+                Tokens stock
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ══ Activité récente ══ */}
-      {recentReceived.length > 0 && (
-        <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
-            Activité récente
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* ══ Feedback instantané ══ */}
+      <div style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 16 }}>Feedback instantané</h2>
+        {recentReceived.length === 0 ? (
+          <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
+            <p className="empty-state">Vous n'avez pas encore reçu de tokens récemment.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {recentReceived.map((tx) => {
-              const initials = tx.sender
-                ? ((tx.sender.first_name[0] ?? '') + (tx.sender.name[0] ?? '')).toUpperCase()
-                : 'P';
               const senderName = tx.sender
                 ? `${tx.sender.first_name} ${tx.sender.name}`
                 : "prim'O";
               return (
-                <div key={tx.id} className="activity-item">
+                <div key={tx.id} style={{
+                  background: '#ffffff', borderRadius: '16px', padding: '16px 20px',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 16
+                }}>
                   <div style={{
-                    width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-                    background: 'var(--primary)', color: '#fff',
+                    width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+                    background: 'rgba(26, 122, 26, 0.1)', color: 'var(--primary)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.8rem', fontWeight: 700,
                   }}>
-                    {initials}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 24, height: 24 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontWeight: 600, fontSize: '0.88rem' }}>{senderName}</p>
-                    {tx.reason && (
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{tx.reason}</p>
-                    )}
+                    <p style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text)' }}>
+                      Vous avez gagné {tx.amount} Tokens !
+                    </p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                      Envoyé par {senderName} {tx.reason ? ` - "${tx.reason}"` : ''}
+                    </p>
                   </div>
-                  <span style={{
-                    background: 'var(--primary)', color: '#fff',
-                    borderRadius: 999, padding: '4px 12px',
-                    fontSize: '0.82rem', fontWeight: 700, flexShrink: 0,
-                  }}>
-                    +{tx.amount} tkn
-                  </span>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* ══ Carousels ══ */}
-      <CarouselRow
-        title="Offres du moment"
-        vouchers={populaires}
-        onRedeem={handleRedeem}
-        redeeming={redeeming}
-        promoCodes={promoCodes}
-        userBalance={balance}
-        isFavorite={isFavorite}
-        onToggle={toggle}
-        isInCart={isInCart}
-        onCartToggle={cartToggle}
-      />
-      <CarouselRow
-        title="❤️ Favoris"
-        vouchers={topFavoris}
-        onRedeem={handleRedeem}
-        redeeming={redeeming}
-        promoCodes={promoCodes}
-        userBalance={balance}
-        isFavorite={isFavorite}
-        onToggle={toggle}
-        isInCart={isInCart}
-        onCartToggle={cartToggle}
-      />
-      <CarouselRow
-        title="🆕 Les offres de la semaine"
-        vouchers={newThisWeek}
-        onRedeem={handleRedeem}
-        redeeming={redeeming}
-        promoCodes={promoCodes}
-        userBalance={balance}
-        isFavorite={isFavorite}
-        onToggle={toggle}
-        isInCart={isInCart}
-        onCartToggle={cartToggle}
-      />
+        )}
+      </div>
 
       {/* ══ Bons déjà achetés ══ */}
       <div style={{ marginBottom: 28 }}>
