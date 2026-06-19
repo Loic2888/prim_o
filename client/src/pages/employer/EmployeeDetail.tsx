@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { userService } from "../../services/user.service";
+import { managerService } from "../../services/manager.service";
 import type { User, TokenTransaction } from "../../types";
 import { fmt } from "../../utils/date";
 
@@ -215,6 +216,30 @@ export default function EmployeeDetail() {
             </table>
           </div>
         )}
+      </div>
+
+      {/* Zone promotion */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 8 }}>
+          Promouvoir en Manager
+        </h2>
+        <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: 14 }}>
+          En promouvant cet employé, il pourra gérer une équipe et distribuer des tokens.
+        </p>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={async () => {
+            try {
+              if (!id) return;
+              await managerService.promoteToManager(id);
+              navigate("/employer/dashboard");
+            } catch {
+              alert("Erreur lors de la promotion.");
+            }
+          }}
+        >
+          Promouvoir
+        </button>
       </div>
 
       {/* Zone suppression */}
