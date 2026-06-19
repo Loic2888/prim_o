@@ -46,6 +46,8 @@ export default function EmployerDashboard() {
   const [createLoading, setCreateLoading] = useState(false);
 
   const [showAddManagerModal, setShowAddManagerModal] = useState(false);
+  const [selectedEmpToPromote, setSelectedEmpToPromote] = useState<User | null>(null);
+  const [teamNameForPromotion, setTeamNameForPromotion] = useState("");
 
   const [schedRules, setSchedRules] = useState<ScheduledAllocation[]>([]);
   const [showSchedModal, setShowSchedModal] = useState(false);
@@ -731,48 +733,90 @@ export default function EmployerDashboard() {
         </div>
       )}
       {showAddManagerModal && (
-        <div className="emp-modal-overlay" onClick={() => setShowAddManagerModal(false)}>
+        <div className="emp-modal-overlay" onClick={() => { setShowAddManagerModal(false); setSelectedEmpToPromote(null); setTeamNameForPromotion(""); }}>
           <div className="emp-modal" onClick={(e) => e.stopPropagation()}>
             <h2 className="emp-modal-title">Ajouter un Manager</h2>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: 16 }}>
-              Sélectionnez un collaborateur existant pour le promouvoir au rôle de Manager. Il pourra alors gérer une équipe et distribuer des tokens.
-            </p>
-            {employees.length === 0 ? (
-              <p className="empty-state" style={{ marginBottom: 20 }}>Aucun collaborateur disponible.</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto", marginBottom: 20 }}>
-                {[...employees].sort((a, b) => a.name.localeCompare(b.name)).map(emp => (
-                  <div key={emp.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--card)" }}>
-                    <div>
-                      <p style={{ fontWeight: 600, fontSize: "0.9rem" }}>{emp.first_name} {emp.name}</p>
-                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{emp.email}</p>
-                    </div>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={async () => {
-                        try {
-                          await managerService.promoteToManager(emp.id);
-                          setShowAddManagerModal(false);
-                          fetchData();
-                        } catch {
-                          alert("Erreur lors de la promotion.");
-                        }
-                      }}
-                    >
-                      Promouvoir
-                    </button>
+            {!selectedEmpToPromote ? (
+              <>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: 16 }}>
+                  Sélectionnez un collaborateur existant pour le promouvoir au rôle de Manager. Il pourra alors gérer une équipe et distribuer des tokens.
+                </p>
+                {employees.length === 0 ? (
+                  <p className="empty-state" style={{ marginBottom: 20 }}>Aucun collaborateur disponible.</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 300, overflowY: "auto", marginBottom: 20 }}>
+                    {[...employees].sort((a, b) => a.name.localeCompare(b.name)).map(emp => (
+                      <div key={emp.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--card)" }}>
+                        <div>
+                          <p style={{ fontWeight: 600, fontSize: "0.9rem" }}>{emp.first_name} {emp.name}</p>
+                          <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{emp.email}</p>
+                        </div>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => {
+                            setSelectedEmpToPromote(emp);
+                            setTeamNameForPromotion(`Équipe de ${emp.first_name}`);
+                          }}
+                        >
+                          Sélectionner
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: 16 }}>
+                  Vous allez promouvoir <strong>{selectedEmpToPromote.first_name} {selectedEmpToPromote.name}</strong>. Veuillez définir le nom de son équipe.
+                </p>
+                <div style={{ marginBottom: 20 }}>
+                  <label className="form-label">Nom de l'équipe</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={teamNameForPromotion}
+                    onChange={(e) => setTeamNameForPromotion(e.target.value)}
+                    placeholder="Ex: Équipe Rayon Frais"
+                    autoFocus
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1 }}
+                    disabled={!teamNameForPromotion.trim()}
+                    onClick={async () => {
+                      try {
+                        await managerService.promoteToManager(selectedEmpToPromote.id, teamNameForPromotion.trim());
+                        setShowAddManagerModal(false);
+                        setSelectedEmpToPromote(null);
+                        setTeamNameForPromotion("");
+                        fetchData();
+                      } catch {
+                        alert("Erreur lors de la promotion.");
+                      }
+                    }}
+                  >
+                    Confirmer la promotion
+                  </button>
+                </div>
+              </>
             )}
             <div className="emp-modal-actions">
               <button
                 type="button"
                 className="btn btn-outline"
                 style={{ width: "100%" }}
-                onClick={() => setShowAddManagerModal(false)}
+                onClick={() => {
+                  if (selectedEmpToPromote) {
+                    setSelectedEmpToPromote(null);
+                  } else {
+                    setShowAddManagerModal(false);
+                  }
+                }}
               >
-                Fermer
+                {selectedEmpToPromote ? "Retour" : "Annuler"}
               </button>
             </div>
           </div>

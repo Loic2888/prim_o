@@ -20,7 +20,7 @@ function computeNextRun(dayOfMonth, frequency, month) {
   return candidate;
 }
 
-const changeRole = async (employer, targetId, newRole) => {
+const changeRole = async (employer, targetId, newRole, teamName) => {
   const target = await User.findOne({
     where: { id: targetId, company_id: employer.company_id },
   });
@@ -52,7 +52,7 @@ const changeRole = async (employer, targetId, newRole) => {
       // Auto-create an active team for the new manager
       await Team.create(
         {
-          name: `Équipe de ${target.first_name}`,
+          name: teamName || `Équipe de ${target.first_name}`,
           company_id: target.company_id,
           manager_id: targetId,
         },

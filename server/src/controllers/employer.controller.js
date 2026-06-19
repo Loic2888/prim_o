@@ -2,7 +2,7 @@ const employerService = require('../services/employer.service');
 
 const changeRole = async (req, res, next) => {
   try {
-    const data = await employerService.changeRole(req.user, req.params.id, req.body.role);
+    const data = await employerService.changeRole(req.user, req.params.id, req.body.role, req.body.teamName);
     res.json({ success: true, data });
   } catch (err) {
     next(err);
