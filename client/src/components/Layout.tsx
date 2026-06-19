@@ -48,9 +48,9 @@ export default function Layout({ children }: Props) {
               </svg>
               <span>{user.role === 'employer' ? (company?.token_balance ?? '…') : (user.token_balance ?? 0)}</span>
             </div>
-          )}
-        </header>
-      )}
+          </div>
+        )}
+      </header>
 
       <main className={`app-main${isHeroPage ? ' app-main--hero' : ''}`}>{children}</main>
 
