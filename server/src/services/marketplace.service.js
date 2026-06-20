@@ -1,6 +1,6 @@
 // randomUUID no longer needed — promo codes are supplied by the partner at creation time
 const sequelize = require('../config/database');
-const { User, Voucher, Redemption, Company } = require('../models');
+const { User, Voucher, Redemption, Company, TeamMember } = require('../models');
 
 const httpError = (message, status) => {
   const err = new Error(message);
@@ -142,7 +142,43 @@ const adminHistory = async () =>
     ],
   });
 
+const listCompanyOrders = async (companyId) => {
+  return Redemption.findAll({
+    order: [['created_at', 'DESC']],
+    include: [
+      { model: Voucher, as: 'voucher', attributes: ['id', 'title', 'partner', 'token_cost'] },
+      { 
+        model: User, 
+        as: 'user', 
+        attributes: ['id', 'name', 'first_name', 'email'],
+        where: { company_id: companyId }
+      }
+    ],
+  });
+};
+
+const listTeamOrders = async (teamId) => {
+  return Redemption.findAll({
+    order: [['created_at', 'DESC']],
+    include: [
+      { model: Voucher, as: 'voucher', attributes: ['id', 'title', 'partner', 'token_cost'] },
+      { 
+        model: User, 
+        as: 'user', 
+        attributes: ['id', 'name', 'first_name', 'email'],
+        include: [{
+          model: TeamMember,
+          as: 'team_memberships',
+          where: { team_id: teamId },
+          attributes: []
+        }]
+      }
+    ],
+  });
+};
+
 module.exports = {
   listItems, getItem, createItem, updateItem, deleteItem, redeem,
   listOrders, adminListVouchers, adminHistory,
+  listCompanyOrders, listTeamOrders,
 };

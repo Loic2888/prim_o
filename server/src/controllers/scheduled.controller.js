@@ -1,4 +1,4 @@
-const { ScheduledAllocation, User } = require('../models');
+const { ScheduledAllocation, User, Team } = require('../models');
 
 function nextMonthly(dayOfMonth) {
   const now = new Date();
@@ -15,7 +15,10 @@ function nextAnnual(dayOfMonth, month) {
 }
 
 const withReceiver = {
-  include: [{ model: User, as: 'receiver', attributes: ['id', 'first_name', 'name', 'email'] }],
+  include: [
+    { model: User, as: 'receiver', attributes: ['id', 'first_name', 'name', 'email'] },
+    { model: Team, as: 'target_team', attributes: ['id', 'name'] }
+  ],
 };
 
 const list = async (req, res, next) => {
@@ -33,7 +36,7 @@ const list = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const { receiver_id, amount, label, frequency, day_of_month, month, excluded_user_ids } = req.body;
+    const { receiver_id, target_type, target_team_id, amount, label, frequency, day_of_month, month, excluded_user_ids } = req.body;
 
     const next_run_at =
       frequency === 'monthly'
@@ -44,13 +47,15 @@ const create = async (req, res, next) => {
       company_id: req.user.company_id,
       sender_id: req.user.id,
       receiver_id: receiver_id || null,
+      target_type: target_type || (receiver_id ? 'user' : 'all_company'),
+      target_team_id: target_team_id || null,
       amount,
       label: label || null,
       frequency,
       day_of_month,
       month: frequency === 'annual' ? month : null,
       next_run_at,
-      excluded_user_ids: receiver_id ? [] : (excluded_user_ids || []),
+      excluded_user_ids: (target_type === 'user' || receiver_id) ? [] : (excluded_user_ids || []),
     });
 
     const full = await ScheduledAllocation.findByPk(rule.id, withReceiver);
@@ -67,7 +72,7 @@ const update = async (req, res, next) => {
     });
     if (!rule) return res.status(404).json({ error: 'Not found', code: 404 });
 
-    const { receiver_id, amount, label, frequency, day_of_month, month, excluded_user_ids } = req.body;
+    const { receiver_id, target_type, target_team_id, amount, label, frequency, day_of_month, month, excluded_user_ids } = req.body;
 
     const next_run_at =
       frequency === 'monthly'
@@ -76,13 +81,15 @@ const update = async (req, res, next) => {
 
     await rule.update({
       receiver_id: receiver_id || null,
+      target_type: target_type || (receiver_id ? 'user' : 'all_company'),
+      target_team_id: target_team_id || null,
       amount,
       label: label || null,
       frequency,
       day_of_month,
       month: frequency === 'annual' ? month : null,
       next_run_at,
-      excluded_user_ids: receiver_id ? [] : (excluded_user_ids || []),
+      excluded_user_ids: (target_type === 'user' || receiver_id) ? [] : (excluded_user_ids || []),
     });
 
     const full = await ScheduledAllocation.findByPk(rule.id, withReceiver);

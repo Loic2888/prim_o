@@ -61,6 +61,19 @@ const changeRole = async (employer, targetId, newRole, teamName) => {
     }
 
     await target.update({ role: newRole }, { transaction: t });
+
+    await TokenTransaction.create(
+      {
+        sender_id: employer.id,
+        receiver_id: targetId,
+        company_id: employer.company_id,
+        amount: 0,
+        type: 'role_change',
+        reason: newRole,
+      },
+      { transaction: t }
+    );
+
     await t.commit();
 
     const { password_hash: _, ...safe } = target.toJSON();
@@ -71,7 +84,7 @@ const changeRole = async (employer, targetId, newRole, teamName) => {
   }
 };
 
-const createAllocation = async (employer, { receiver_id, amount, day_of_month, frequency, month, immediate }) => {
+const createAllocation = async (employer, { receiver_id, amount, day_of_month, frequency, month, immediate, target_account }) => {
   const manager = await User.findOne({
     where: { id: receiver_id, company_id: employer.company_id, role: 'manager' },
   });
@@ -86,6 +99,7 @@ const createAllocation = async (employer, { receiver_id, amount, day_of_month, f
     day_of_month: day_of_month || 1,
     month: month || null,
     label: 'employer_to_manager',
+    target_account: target_account || 'personal',
     next_run_at: computeNextRun(day_of_month, frequency, month),
     active: true,
     excluded_user_ids: [],
@@ -97,14 +111,31 @@ const createAllocation = async (employer, { receiver_id, amount, day_of_month, f
       const company = await Company.findByPk(employer.company_id, { lock: true, transaction: t });
       if (company && company.token_balance >= amount) {
         await company.decrement('token_balance', { by: amount, transaction: t });
-        await manager.increment('token_balance', { by: amount, transaction: t });
+        
+        if (target_account === 'team') {
+          let team = await Team.findOne({ where: { manager_id: manager.id, dissolved_at: null }, lock: true, transaction: t });
+          if (!team) {
+            team = await Team.create({
+              name: `Équipe de ${manager.first_name || manager.name || 'Manager'}`,
+              company_id: manager.company_id,
+              manager_id: manager.id,
+              token_balance: 0
+            }, { transaction: t });
+          }
+          await team.increment('token_balance', { by: amount, transaction: t });
+
+        } else {
+          await manager.increment('token_balance', { by: amount, transaction: t });
+        }
+
         await TokenTransaction.create(
           {
             sender_id: employer.id,
             receiver_id,
             company_id: employer.company_id,
             amount,
-            type: 'employer_to_manager',
+            type: target_account === 'team' ? 'employer_to_team' : 'employer_to_manager',
+            reason: target_account === 'team' ? "Enveloppe de token pour l'équipe" : null,
           },
           { transaction: t }
         );
@@ -125,6 +156,23 @@ const listAllocations = async (company_id) => {
     where: { company_id, label: 'employer_to_manager' },
     include: [{ model: User, as: 'receiver', attributes: { exclude: ['password_hash'] } }],
     order: [['created_at', 'DESC']],
+  });
+};
+
+const listTeams = async (company_id) => {
+  return Team.findAll({
+    where: { company_id, dissolved_at: null },
+    include: [
+      { model: User, as: 'manager', attributes: { exclude: ['password_hash'] } },
+      { 
+        model: TeamMember, 
+        as: 'members', 
+        where: { left_at: null }, 
+        required: false,
+        include: [{ model: User, as: 'user', attributes: { exclude: ['password_hash'] } }]
+      }
+    ],
+    order: [['name', 'ASC']]
   });
 };
 
@@ -165,4 +213,4 @@ const getManagerTeam = async (employer, managerId) => {
   return { manager, team: team || null };
 };
 
-module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam };
+module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam, listTeams };

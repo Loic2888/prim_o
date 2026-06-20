@@ -1,7 +1,8 @@
 const cron = require('node-cron');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
-const { ScheduledAllocation, User, Company, TokenTransaction } = require('../models');
+const { ScheduledAllocation, User, Company, TokenTransaction, Team, TeamMember } = require('../models');
+const { resolveTargets } = require('./targetResolver.service');
 
 function nextMonthly(dayOfMonth) {
   const now = new Date();
@@ -36,17 +37,13 @@ async function runScheduledAllocations() {
   });
 
   for (const rule of due) {
-    const excluded = Array.isArray(rule.excluded_user_ids) ? rule.excluded_user_ids : [];
-    const targets = rule.receiver_id
-      ? [rule.receiver]
-      : await User.findAll({
-          where: {
-            company_id: rule.company_id,
-            role: 'employee',
-            status: 'active',
-            ...(excluded.length > 0 ? { id: { [Op.notIn]: excluded } } : {}),
-          },
-        });
+    const targets = await resolveTargets({
+      company_id: rule.company_id,
+      target_type: rule.target_type,
+      receiver_id: rule.receiver_id,
+      target_team_id: rule.target_team_id,
+      excluded_user_ids: Array.isArray(rule.excluded_user_ids) ? rule.excluded_user_ids : [],
+    });
 
     for (const receiver of targets) {
       if (!receiver) continue;
@@ -55,11 +52,12 @@ async function runScheduledAllocations() {
         const sender = await User.findByPk(rule.sender_id, { lock: true, transaction: t });
 
         if (sender && sender.role === 'manager') {
-          if (sender.token_balance < rule.amount) {
+          const team = await Team.findOne({ where: { manager_id: sender.id, dissolved_at: null }, lock: true, transaction: t });
+          if (!team || team.token_balance < rule.amount) {
             await t.rollback();
             continue;
           }
-          await sender.decrement('token_balance', { by: rule.amount, transaction: t });
+          await team.decrement('token_balance', { by: rule.amount, transaction: t });
         } else {
           const company = await Company.findOne({
             where: { id: rule.company_id },
@@ -73,7 +71,16 @@ async function runScheduledAllocations() {
           await company.decrement('token_balance', { by: rule.amount, transaction: t });
         }
 
-        await receiver.increment('token_balance', { by: rule.amount, transaction: t });
+        if (rule.target_account === 'team' && receiver.role === 'manager') {
+          const receiverTeam = await Team.findOne({ where: { manager_id: receiver.id, dissolved_at: null }, lock: true, transaction: t });
+          if (receiverTeam) {
+            await receiverTeam.increment('token_balance', { by: rule.amount, transaction: t });
+          } else {
+            await receiver.increment('token_balance', { by: rule.amount, transaction: t });
+          }
+        } else {
+          await receiver.increment('token_balance', { by: rule.amount, transaction: t });
+        }
 
         await TokenTransaction.create(
           {
@@ -81,7 +88,7 @@ async function runScheduledAllocations() {
             receiver_id: receiver.id,
             company_id: rule.company_id,
             amount: rule.amount,
-            type: rule.label || 'scheduled_allocation',
+            type: rule.target_account === 'team' ? 'employer_to_team' : (rule.label || 'scheduled_allocation'),
           },
           { transaction: t }
         );

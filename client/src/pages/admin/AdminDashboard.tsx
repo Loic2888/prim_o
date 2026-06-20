@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { companyService } from '../../services/company.service';
-import type { Company } from '../../types';
+import { userService } from '../../services/user.service';
+import { tokenService } from '../../services/token.service';
+import type { Company, User } from '../../types';
+import UserSelectionModal from '../../components/UserSelectionModal';
+import CompanySelectionModal from '../../components/CompanySelectionModal';
 
 const EMPTY_COMPANY_FORM = {
   name: '',
@@ -28,6 +32,21 @@ export default function AdminDashboard() {
   const [grantError, setGrantError]         = useState('');
   const [grantSuccess, setGrantSuccess]     = useState('');
 
+  /* Déduction de tokens */
+  type DeductTarget = 'company' | 'employee';
+  const [deductTarget, setDeductTarget] = useState<DeductTarget>('company');
+  const [deductCompanyId, setDeductCompanyId] = useState('');
+  const [deductUserId, setDeductUserId] = useState('');
+  const [deductAmount, setDeductAmount] = useState('');
+  const [deductReason, setDeductReason] = useState('');
+  const [deductPending, setDeductPending] = useState(false);
+  const [deductConfirm, setDeductConfirm] = useState(false);
+  const [deductMsg, setDeductMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [deductCompanyUsers, setDeductCompanyUsers] = useState<User[]>([]);
+  const [showDeductModal, setShowDeductModal] = useState(false);
+  const [showDeductCompanyModal, setShowDeductCompanyModal] = useState(false);
+  const [showGrantCompanyModal, setShowGrantCompanyModal] = useState(false);
+
   /* Créer une entreprise */
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState(EMPTY_COMPANY_FORM);
@@ -42,6 +61,17 @@ export default function AdminDashboard() {
       .catch(() => setError('Impossible de charger les entreprises.'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!deductCompanyId) {
+      setDeductCompanyUsers([]);
+      setDeductUserId('');
+      return;
+    }
+    userService.getAll({ companyId: deductCompanyId }).then(res => {
+      setDeductCompanyUsers((res as any).data?.data || []);
+    });
+  }, [deductCompanyId]);
 
   async function handleGrantTokens(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +92,40 @@ export default function AdminDashboard() {
       setGrantError('Erreur lors de l\'attribution des tokens.');
     } finally {
       setGranting(false);
+    }
+  }
+
+  function handleDeductSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setDeductMsg(null);
+    setDeductConfirm(true);
+  }
+
+  async function handleDeductConfirm() {
+    if (!deductCompanyId) return;
+    setDeductPending(true);
+    try {
+      await tokenService.adminDeduct({
+        target: deductTarget,
+        company_id: deductCompanyId,
+        user_id: deductTarget === 'employee' ? deductUserId : undefined,
+        amount: Number(deductAmount),
+        reason: deductReason || undefined,
+      });
+      // Rafraîchit les entreprises
+      const freshCompanies = await companyService.getAll();
+      setCompanies(freshCompanies);
+      setDeductMsg({ ok: true, text: `${deductAmount} tokens déduits avec succès.` });
+      setDeductAmount('');
+      setDeductReason('');
+      setDeductUserId('');
+      setDeductConfirm(false);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string } } };
+      setDeductMsg({ ok: false, text: axiosErr.response?.data?.error ?? 'Erreur lors de la déduction.' });
+      setDeductConfirm(false);
+    } finally {
+      setDeductPending(false);
     }
   }
 
@@ -120,21 +184,15 @@ export default function AdminDashboard() {
           background-color: rgba(255, 255, 255, 0.15) !important;
         }
       `}</style>
-      <div className="page-header">
+      <div className="page-header page-header--clean">
         <div style={{ width: '100%', textAlign: 'center' }}>
-          <h1>Liste des entreprises</h1>
+          <h1>Entreprises</h1>
         </div>
-        <button className="back-btn" onClick={() => navigate('/admin/stats')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Retour
-        </button>
       </div>
 
       {error && <p className="form-error">{error}</p>}
 
-      <div className="grid-3" style={{ marginBottom: 28 }}>
+      <div className="grid-2" style={{ marginBottom: 28 }}>
         <div className="stat-card">
           <p className="stat-label">Entreprises</p>
           <p className="stat-value">{companies.length}</p>
@@ -143,106 +201,9 @@ export default function AdminDashboard() {
           <p className="stat-label">Tokens en circulation</p>
           <p className="stat-value">{totalTokens}</p>
         </div>
-        <div
-          className="stat-card"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            border: '2px dashed var(--primary)',
-            background: 'rgba(0, 161, 154, 0.03)',
-            transition: 'all 0.15s ease',
-          }}
-          onClick={() => {
-            setCreateForm(EMPTY_COMPANY_FORM);
-            setCreateError('');
-            setShowCreateModal(true);
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(0, 161, 154, 0.08)';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(0, 161, 154, 0.03)';
-            e.currentTarget.style.transform = '';
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ width: 26, height: 26, color: 'var(--primary)', marginBottom: 6 }}
-            >
-              {/* Building outline */}
-              <path d="M3 21h18" />
-              <path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
-              {/* Windows */}
-              <path d="M9 7h1" />
-              <path d="M9 11h1" />
-              <path d="M9 15h1" />
-              {/* Plus badge on side */}
-              <path d="M18 10h4" />
-              <path d="M20 8v4" />
-            </svg>
-            <p className="stat-label" style={{ margin: 0, fontWeight: 600, color: 'var(--primary)' }}>
-              Créer une entreprise
-            </p>
-          </div>
-        </div>
       </div>
 
-
-      {/* Donner des tokens */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ marginBottom: 16, fontSize: '1rem', fontWeight: 600 }}>🪙 Donner des tokens</h2>
-        <form onSubmit={handleGrantTokens}>
-          <div className="grid-2" style={{ marginBottom: 12 }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Entreprise</label>
-              <select
-                className="form-input"
-                value={grantCompanyId}
-                onChange={e => { setGrantCompanyId(e.target.value); setGrantSuccess(''); }}
-                required
-              >
-                <option value="">— Choisir une entreprise —</option>
-                {companies.map(c => {
-                  const addr = [c.street, c.zip_code, c.city].filter(Boolean).join(', ');
-                  return (
-                    <option key={c.id} value={c.id}>
-                      {c.name}{addr ? ` — ${addr}` : ''}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Montant de tokens</label>
-              <input
-                className="form-input"
-                type="number"
-                min="1"
-                placeholder="ex : 500"
-                value={grantAmount}
-                onChange={e => { setGrantAmount(e.target.value); setGrantSuccess(''); }}
-                required
-              />
-            </div>
-          </div>
-          {grantError   && <p className="form-error"   style={{ marginBottom: 10 }}>{grantError}</p>}
-          {grantSuccess && <p className="form-success" style={{ marginBottom: 10 }}>{grantSuccess}</p>}
-          <button type="submit" className="btn btn-primary" disabled={granting}>
-            {granting ? 'Attribution…' : 'Attribuer les tokens'}
-          </button>
-        </form>
-      </div>
-
-      <div className="card">
         <h2 style={{ marginBottom: 16, fontSize: '1rem', fontWeight: 600 }}>
           Entreprises
         </h2>
@@ -277,6 +238,188 @@ export default function AdminDashboard() {
         )}
       </div>
 
+      {/* Donner des tokens */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <h2 style={{ marginBottom: 16, fontSize: '1rem', fontWeight: 600 }}>🪙 Donner des tokens</h2>
+        <form onSubmit={handleGrantTokens}>
+          <div className="grid-2" style={{ marginBottom: 12 }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Entreprise</label>
+              <button
+                type="button"
+                className="form-input"
+                style={{ textAlign: 'left', background: 'var(--bg)', color: grantCompanyId ? 'var(--text)' : 'var(--text-muted)' }}
+                onClick={() => setShowGrantCompanyModal(true)}
+              >
+                {grantCompanyId ? (() => {
+                  const c = companies.find(x => x.id === grantCompanyId);
+                  return c ? `${c.name} — solde : ${c.token_balance} tokens` : 'Sélectionner une entreprise...';
+                })() : 'Sélectionner une entreprise...'}
+              </button>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Montant de tokens</label>
+              <input
+                className="form-input"
+                type="number"
+                min="1"
+                placeholder="ex : 500"
+                value={grantAmount}
+                onChange={e => { setGrantAmount(e.target.value); setGrantSuccess(''); }}
+                required
+              />
+            </div>
+          </div>
+          {grantError   && <p className="form-error"   style={{ marginBottom: 10 }}>{grantError}</p>}
+          {grantSuccess && <p className="form-success" style={{ marginBottom: 10 }}>{grantSuccess}</p>}
+          <button type="submit" className="btn btn-primary" disabled={granting}>
+            {granting ? 'Attribution…' : 'Attribuer les tokens'}
+          </button>
+        </form>
+      </div>
+
+      {/* Déduction de tokens */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <h2 style={{ marginBottom: 16, fontSize: '1rem', fontWeight: 600 }}>🔻 Déduire des tokens</h2>
+        
+        {/* Tabs cible */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          {(['company', 'employee'] as DeductTarget[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => { setDeductTarget(t); setDeductUserId(''); setDeductMsg(null); setDeductConfirm(false); }}
+              style={{
+                flex: 1, padding: '10px 0', borderRadius: 'var(--radius)',
+                border: '1.5px solid', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem',
+                background: deductTarget === t ? 'var(--primary)' : 'transparent',
+                borderColor: deductTarget === t ? 'var(--primary)' : 'var(--border)',
+                color: deductTarget === t ? '#fff' : 'var(--text)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {t === 'company' ? '🏢 Entreprise' : '👤 Individuel'}
+            </button>
+          ))}
+        </div>
+
+        {!deductConfirm ? (
+          <form onSubmit={handleDeductSubmit}>
+            <div className="form-group">
+              <label className="form-label">Entreprise</label>
+              <button
+                type="button"
+                className="form-input"
+                style={{ textAlign: 'left', background: 'var(--bg)', color: deductCompanyId ? 'var(--text)' : 'var(--text-muted)' }}
+                onClick={() => setShowDeductCompanyModal(true)}
+              >
+                {deductCompanyId ? (() => {
+                  const c = companies.find(x => x.id === deductCompanyId);
+                  return c ? `${c.name} — solde : ${c.token_balance} tokens` : 'Sélectionner une entreprise...';
+                })() : 'Sélectionner une entreprise...'}
+              </button>
+            </div>
+
+            {deductTarget === 'employee' && (
+              <div className="form-group">
+                <label className="form-label">Employé</label>
+                <button
+                  type="button"
+                  className="form-input"
+                  style={{ textAlign: 'left', background: 'var(--bg)', color: deductUserId ? 'var(--text)' : 'var(--text-muted)' }}
+                  onClick={() => {
+                    if (!deductCompanyId) {
+                      setDeductMsg({ ok: false, text: 'Veuillez d\'abord sélectionner une entreprise.' });
+                      return;
+                    }
+                    setShowDeductModal(true);
+                  }}
+                >
+                  {deductUserId ? (() => {
+                    const u = deductCompanyUsers.find(x => x.id === deductUserId);
+                    return u ? `${u.first_name} ${u.name} — ${u.token_balance} tokens` : 'Sélectionner un utilisateur...';
+                  })() : 'Sélectionner un utilisateur...'}
+                </button>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">Montant à déduire</label>
+              <input
+                className="form-input"
+                type="number"
+                min={1}
+                value={deductAmount}
+                onChange={(e) => setDeductAmount(e.target.value)}
+                placeholder="ex. 50"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Motif (facultatif)</label>
+              <input
+                className="form-input"
+                type="text"
+                value={deductReason}
+                onChange={(e) => setDeductReason(e.target.value)}
+                placeholder="ex. Correction d'erreur"
+              />
+            </div>
+
+            {deductMsg && (
+              <p className={deductMsg.ok ? 'form-success' : 'form-error'} style={{ marginBottom: 12 }}>
+                {deductMsg.text}
+              </p>
+            )}
+
+            <button type="submit" className="btn btn-primary" style={{ background: '#dc2626', borderColor: '#dc2626' }}>
+              Déduire
+            </button>
+          </form>
+        ) : (
+          <div>
+            <div style={{ background: 'var(--bg)', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Cible</span>
+                <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                  {deductTarget === 'company'
+                    ? companies.find(c => c.id === deductCompanyId)?.name || '—'
+                    : (() => { const u = deductCompanyUsers.find(u => String(u.id) === deductUserId); return u ? `${u.first_name} ${u.name}` : '—'; })()
+                  }
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tokens à déduire</span>
+                <span className="token-badge" style={{ fontSize: '1rem', background: '#fee2e2', color: '#dc2626' }}>−{deductAmount}</span>
+              </div>
+              {deductReason && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flexShrink: 0 }}>Motif</span>
+                  <span style={{ fontSize: '0.85rem', textAlign: 'right' }}>{deductReason}</span>
+                </div>
+              )}
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+              Cette action est irréversible. Confirmez-vous la déduction ?
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn btn-outline" onClick={() => setDeductConfirm(false)} disabled={deductPending}>
+                Annuler
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ background: '#dc2626', borderColor: '#dc2626' }}
+                onClick={handleDeductConfirm}
+                disabled={deductPending}
+              >
+                {deductPending ? 'Déduction…' : 'Confirmer la déduction'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {showCreateModal && (
         <div className="emp-modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="emp-modal" onClick={(e) => e.stopPropagation()}>
@@ -296,13 +439,14 @@ export default function AdminDashboard() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Email de contact (optionnel)</label>
+                <label className="form-label">Email de contact</label>
                 <input
                   className="form-input"
                   type="email"
                   placeholder="contact@acme.com"
                   value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  required
                 />
               </div>
 
@@ -322,7 +466,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Adresse (optionnelle)</label>
+                <label className="form-label">Adresse complète</label>
                 <input
                   className="form-input"
                   type="text"
@@ -330,6 +474,7 @@ export default function AdminDashboard() {
                   value={createForm.street}
                   onChange={(e) => setCreateForm({ ...createForm, street: e.target.value })}
                   style={{ marginBottom: 12 }}
+                  required
                 />
                 <div className="emp-modal-row">
                   <div>
@@ -343,6 +488,7 @@ export default function AdminDashboard() {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setCreateForm({ ...createForm, zip_code: val });
                       }}
+                      required
                     />
                   </div>
                   <div>
@@ -352,6 +498,7 @@ export default function AdminDashboard() {
                       placeholder="Ville"
                       value={createForm.city}
                       onChange={(e) => setCreateForm({ ...createForm, city: e.target.value })}
+                      required
                     />
                   </div>
                 </div>
@@ -384,6 +531,34 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {showDeductModal && (
+        <UserSelectionModal
+          users={deductCompanyUsers.filter(u => u.role === 'manager' || u.role === 'employee')}
+          title="Sélectionner un utilisateur"
+          onSelect={(id) => { setDeductUserId(id); setShowDeductModal(false); }}
+          onClose={() => setShowDeductModal(false)}
+        />
+      )}
+
+      {showDeductCompanyModal && (
+        <CompanySelectionModal
+          companies={companies}
+          title="Sélectionner une entreprise"
+          onSelect={(id) => { setDeductCompanyId(id); setDeductUserId(''); setShowDeductCompanyModal(false); }}
+          onClose={() => setShowDeductCompanyModal(false)}
+        />
+      )}
+
+      {showGrantCompanyModal && (
+        <CompanySelectionModal
+          companies={companies}
+          title="Sélectionner une entreprise"
+          onSelect={(id) => { setGrantCompanyId(id); setGrantSuccess(''); setShowGrantCompanyModal(false); }}
+          onClose={() => setShowGrantCompanyModal(false)}
+        />
+      )}
+
     </div>
   );
 }

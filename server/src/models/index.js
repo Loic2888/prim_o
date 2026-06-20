@@ -56,6 +56,9 @@ ScheduledAllocation.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
 User.hasMany(ScheduledAllocation, { foreignKey: 'receiver_id', as: 'received_scheduled_allocations' });
 ScheduledAllocation.belongsTo(User, { foreignKey: 'receiver_id', as: 'receiver' });
 
+Team.hasMany(ScheduledAllocation, { foreignKey: 'target_team_id', as: 'scheduled_allocations' });
+ScheduledAllocation.belongsTo(Team, { foreignKey: 'target_team_id', as: 'target_team' });
+
 // Team associations
 Company.hasMany(Team, { foreignKey: 'company_id', as: 'teams' });
 Team.belongsTo(Company, { foreignKey: 'company_id', as: 'company' });

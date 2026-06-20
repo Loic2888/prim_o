@@ -22,7 +22,20 @@ const getBalance = async (req, res, next) => {
 
 const listTransactions = async (req, res, next) => {
   try {
-    const data = await tokenService.listTransactions(req.query);
+    const query = { ...req.query, company_id: req.user.company_id };
+    
+    // Un employé ne peut voir que ses propres transactions
+    if (req.user.role === 'employee') {
+      query.userId = req.user.id;
+    } else if (req.user.role === 'manager') {
+      const { Team } = require('../models');
+      const team = await Team.findOne({ where: { manager_id: req.user.id } });
+      if (team) {
+        query.managerTeamId = team.id;
+      }
+    }
+    
+    const data = await tokenService.listTransactions(query);
     res.json({ success: true, data });
   } catch (err) {
     next(err);

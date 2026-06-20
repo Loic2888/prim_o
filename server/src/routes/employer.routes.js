@@ -15,6 +15,8 @@ router.get(
   employerController.getManagerTeam
 );
 
+router.get('/teams', employerController.listTeams);
+
 router.patch(
   '/employees/:id/role',
   [

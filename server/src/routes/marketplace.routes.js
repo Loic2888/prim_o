@@ -66,6 +66,13 @@ router.post(
 
 router.get('/orders', verifyToken, roleGuard('employee', 'manager'), marketplaceController.listOrders);
 
+router.get(
+  '/company-orders',
+  verifyToken,
+  roleGuard('employer', 'manager'),
+  marketplaceController.companyOrders
+);
+
 /* ── Admin-only endpoints ── */
 router.get('/admin/vouchers', verifyToken, roleGuard('admin'), marketplaceController.adminListVouchers);
 router.get('/admin/history',  verifyToken, roleGuard('admin'), marketplaceController.adminHistory);

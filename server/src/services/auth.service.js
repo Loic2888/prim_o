@@ -59,19 +59,28 @@ const register = async ({ name, first_name, email, password, role, company_id })
 };
 
 const login = async ({ email, password }) => {
-  const { User } = require('../models');
-  const user = await User.findOne({ where: { email } });
+  const { User, Company, Team } = require('../models');
+  const user = await User.findOne({
+    where: { email: email.toLowerCase() },
+    include: [{ model: Company, as: 'company' }],
+  });
   if (!user) {
     throw httpError('Invalid credentials', 401);
   }
-
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) {
+  const isValid = await bcrypt.compare(password, user.password_hash);
+  if (!isValid) {
     throw httpError('Invalid credentials', 401);
   }
 
+  const { password_hash: _, ...safeUser } = user.toJSON();
+
+  if (safeUser.role === 'manager') {
+    const team = await Team.findOne({ where: { manager_id: user.id, dissolved_at: null } });
+    safeUser.team_token_balance = team ? team.token_balance : 0;
+  }
+
   return {
-    user: safeUser(user),
+    user: safeUser,
     accessToken: createAccessToken(user),
     refreshToken: createRefreshToken(user),
   };
@@ -82,14 +91,19 @@ const login = async ({ email, password }) => {
 const logout = async (_userId) => {};
 
 const getProfile = async (userId) => {
-  const { User } = require('../models');
+  const { User, Team } = require('../models');
   const user = await User.findByPk(userId, {
     attributes: { exclude: ['password_hash'] },
   });
   if (!user) {
     throw httpError('User not found', 404);
   }
-  return user;
+  const userData = user.toJSON();
+  if (userData.role === 'manager') {
+    const team = await Team.findOne({ where: { manager_id: user.id, dissolved_at: null } });
+    userData.team_token_balance = team ? team.token_balance : 0;
+  }
+  return userData;
 };
 
 const refreshToken = async (token) => {

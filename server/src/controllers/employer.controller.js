@@ -45,4 +45,13 @@ const getManagerTeam = async (req, res, next) => {
   }
 };
 
-module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam };
+const listTeams = async (req, res, next) => {
+  try {
+    const data = await employerService.listTeams(req.user.company_id);
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam, listTeams };

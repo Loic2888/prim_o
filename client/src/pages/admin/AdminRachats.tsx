@@ -42,7 +42,7 @@ export default function AdminRachats() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header page-header--clean">
         <div>
           <h1>Rachats totaux</h1>
           <p>{history.length} échange{history.length !== 1 ? 's' : ''} effectué{history.length !== 1 ? 's' : ''}</p>

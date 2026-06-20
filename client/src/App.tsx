@@ -71,12 +71,12 @@ export default function App() {
             </ProtectedRoute>
           } />
           <Route path="/employer/employees/:id" element={
-            <ProtectedRoute allowedRoles={['employer']}>
+            <ProtectedRoute allowedRoles={['employer', 'admin']}>
               <Layout><EmployeeDetail /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/employer/managers/:id" element={
-            <ProtectedRoute allowedRoles={['employer']}>
+            <ProtectedRoute allowedRoles={['employer', 'admin']}>
               <Layout><ManagerDetail /></Layout>
             </ProtectedRoute>
           } />

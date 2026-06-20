@@ -78,7 +78,25 @@ const adminHistory = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const companyOrders = async (req, res, next) => {
+  try {
+    let data = [];
+    if (req.user.role === 'employer') {
+      data = await marketplaceService.listCompanyOrders(req.user.company_id);
+    } else if (req.user.role === 'manager') {
+      const { Team } = require('../models');
+      const team = await Team.findOne({ where: { manager_id: req.user.id } });
+      if (team) {
+        data = await marketplaceService.listTeamOrders(team.id);
+      }
+    }
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   listItems, getItem, createItem, updateItem, deleteItem, redeem,
-  listOrders, adminListVouchers, adminHistory,
+  listOrders, adminListVouchers, adminHistory, companyOrders,
 };

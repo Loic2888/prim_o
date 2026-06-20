@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { userService } from "../../services/user.service";
 import { managerService } from "../../services/manager.service";
+import { tokenService } from "../../services/token.service";
 import type { User, TokenTransaction } from "../../types";
 import { fmt } from "../../utils/date";
 
@@ -33,6 +34,12 @@ export default function EmployeeDetail() {
   const [entryDate, setEntryDate] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [quickTarget, setQuickTarget] = useState<boolean>(false);
+  const [quickAmount, setQuickAmount] = useState("");
+  const [quickReason, setQuickReason] = useState("");
+  const [quickSuccess, setQuickSuccess] = useState("");
+  const [quickError, setQuickError] = useState("");
+
   useEffect(() => {
     if (!id) return;
     Promise.all([userService.getById(id), userService.getHistory(id)])
@@ -45,12 +52,43 @@ export default function EmployeeDetail() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  async function handleQuickSend(e: React.FormEvent) {
+    e.preventDefault();
+    setQuickError("");
+    try {
+      await tokenService.allocate({
+        target_type: "user",
+        receiver_id: employee?.id,
+        amount: parseInt(quickAmount) || 0,
+        reason: quickReason || undefined,
+      });
+      setQuickSuccess(`${quickAmount} tokens envoyés à ${employee?.first_name} !`);
+      
+      // Update UI
+      if (employee) {
+         setEmployee({ ...employee, token_balance: (employee.token_balance || 0) + parseInt(quickAmount) });
+      }
+
+      // Refresh history
+      if (id) {
+        userService.getHistory(id).then(setHistory);
+      }
+
+      setTimeout(() => {
+        setQuickTarget(false);
+        setQuickSuccess("");
+      }, 2000);
+    } catch (err: any) {
+      setQuickError(err.response?.data?.error || "Erreur lors de l'envoi.");
+    }
+  }
+
   async function handleDelete() {
     if (!id) return;
     setDeleting(true);
     try {
       await userService.delete(id);
-      navigate("/employer/dashboard");
+      navigate(-1);
     } catch {
       setError("Erreur lors de la suppression.");
       setDeleting(false);
@@ -71,35 +109,32 @@ export default function EmployeeDetail() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div className="card" style={{ padding: '16px 24px', margin: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>
             {employee.first_name} {employee.name}
           </h1>
-          <p>{employee.email}</p>
+          <p style={{ color: 'var(--text-muted)', margin: 0, marginTop: '4px' }}>Employé</p>
         </div>
-        <button
-          className="back-btn"
-          onClick={() => navigate("/employer/dashboard")}
-        >
-          <IconArrowLeft /> Retour
-        </button>
       </div>
 
       {error && <p className="form-error">{error}</p>}
 
       {/* Stats */}
-      <div className="grid-3" style={{ marginBottom: 28 }}>
-        <div className="stat-card">
+      <div style={{ marginBottom: 28 }}>
+        <div 
+          className="stat-card" 
+          style={{ maxWidth: '300px', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+          onClick={() => { setQuickTarget(true); setQuickAmount(''); setQuickReason(''); setQuickError(''); setQuickSuccess(''); }}
+          onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.08)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; }}
+        >
           <p className="stat-label">Tokens</p>
           <p className="stat-value">{employee.token_balance}</p>
           <p className="stat-sub">solde actuel</p>
-        </div>
-        <div className="stat-card">
-          <p className="stat-label">Membre depuis</p>
-          <p className="stat-value" style={{ fontSize: "1.1rem" }}>
-            {fmt(employee.created_at)}
-          </p>
+          <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span>+ Ajouter tokens</span>
+          </div>
         </div>
       </div>
 
@@ -232,7 +267,7 @@ export default function EmployeeDetail() {
             try {
               if (!id) return;
               await managerService.promoteToManager(id);
-              navigate("/employer/dashboard");
+                      navigate(-1);
             } catch {
               alert("Erreur lors de la promotion.");
             }
@@ -306,6 +341,61 @@ export default function EmployeeDetail() {
           </div>
         )}
       </div>
+
+      {/* ══ Quick send modal ══ */}
+      {quickTarget && (
+        <div className="emp-modal-overlay" onClick={() => { setQuickTarget(false); setQuickError(''); setQuickSuccess(''); }}>
+          <div className="emp-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: 'var(--primary-light)', color: 'var(--primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1rem', fontWeight: 700, flexShrink: 0,
+              }}>
+                {(employee.first_name[0] ?? '').toUpperCase()}{(employee.name[0] ?? '').toUpperCase()}
+              </div>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>{employee.first_name} {employee.name}</p>
+                <span className="token-badge" style={{ fontSize: '0.72rem' }}>
+                  {employee.token_balance} tkn actuels
+                </span>
+              </div>
+            </div>
+
+            {quickSuccess ? (
+              <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
+                <p style={{ fontSize: '1.5rem', marginBottom: 8 }}>🎉</p>
+                <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>{quickSuccess}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleQuickSend}>
+                <div className="form-group">
+                  <label className="form-label">Montant de tokens</label>
+                  <input className="form-input" type="number" min={1} value={quickAmount}
+                    onChange={(e) => setQuickAmount(e.target.value)}
+                    placeholder="ex. 20" required autoFocus />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Motif</label>
+                  <input className="form-input" type="text" value={quickReason}
+                    onChange={(e) => setQuickReason(e.target.value)}
+                    placeholder="ex. Bonus trimestriel" required />
+                </div>
+                {quickError && <p className="form-error" style={{ marginBottom: 16 }}>{quickError}</p>}
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                  <button type="button" className="btn" onClick={() => setQuickTarget(false)} style={{ padding: '8px 16px' }}>
+                    Annuler
+                  </button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }} disabled={!quickAmount}>
+                    Envoyer
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

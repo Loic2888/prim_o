@@ -18,11 +18,11 @@ const list = async ({ role, companyId } = {}) => {
 };
 
 const getById = async (id, companyId) => {
+  const where = { id };
+  if (companyId) where.company_id = companyId;
+
   const user = await User.findOne({
-    where: {
-      id,
-      company_id: companyId,
-    },
+    where,
     attributes: SAFE_ATTRIBUTES,
   });
 

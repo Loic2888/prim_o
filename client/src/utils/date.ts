@@ -21,3 +21,13 @@ export function fmt(
 export function fmtShort(date: string | null | undefined): string {
   return fmt(date, { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+export function fmtDateTime(date: string | null | undefined): string {
+  if (!date) return '—';
+  const d = new Date(normalise(date));
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  }).replace(' ', ' à ');
+}

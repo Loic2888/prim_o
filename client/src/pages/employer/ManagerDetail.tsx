@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { managerService } from "../../services/manager.service";
 import { userService } from "../../services/user.service";
+import { tokenService } from "../../services/token.service";
 import type { User, Team, TokenTransaction } from "../../types";
 import { fmt } from "../../utils/date";
+import { useAuth } from "../../context/AuthContext";
 
 function IconArrowLeft() {
   return (
@@ -18,6 +20,7 @@ export default function ManagerDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const { refreshCompany } = useAuth();
   const [manager, setManager] = useState<User | null>(null);
   const [team, setTeam] = useState<Team | null>(null);
   const [history, setHistory] = useState<TokenTransaction[]>([]);
@@ -27,6 +30,12 @@ export default function ManagerDetail() {
   const [promoting, setPromoting] = useState(false);
   const [confirmDemote, setConfirmDemote] = useState(false);
   const [demoting, setDemoting] = useState(false);
+
+  const [quickTarget, setQuickTarget] = useState<'personal' | 'team' | null>(null);
+  const [quickAmount, setQuickAmount] = useState("");
+  const [quickReason, setQuickReason] = useState("");
+  const [quickSuccess, setQuickSuccess] = useState("");
+  const [quickError, setQuickError] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -56,6 +65,43 @@ export default function ManagerDetail() {
     }
   }
 
+  async function handleQuickSend(e: React.FormEvent) {
+    e.preventDefault();
+    setQuickError("");
+    try {
+      await tokenService.allocate({
+        target_type: "user",
+        receiver_id: manager?.id,
+        amount: parseInt(quickAmount) || 0,
+        reason: quickReason || undefined,
+        target_account: quickTarget || undefined,
+      });
+      setQuickSuccess(`${quickAmount} tokens envoyés au compte ${quickTarget === 'team' ? 'équipe' : 'personnel'} de ${manager?.first_name} !`);
+      
+      // Update UI by refetching everything to be safe (especially since team might have been created)
+      if (id) {
+        Promise.all([
+          managerService.getManagerTeam(id),
+          userService.getHistory(id),
+        ]).then(([teamData, hist]) => {
+          setManager(teamData.manager);
+          setTeam(teamData.team);
+          setHistory(hist);
+        });
+      }
+      
+      // Refresh employer company token balance
+      refreshCompany();
+
+      setTimeout(() => {
+        setQuickTarget(null);
+        setQuickSuccess("");
+      }, 2000);
+    } catch (err: any) {
+      setQuickError(err.response?.data?.error || "Erreur lors de l'envoi.");
+    }
+  }
+
   if (loading) return <div style={{ padding: 32, color: "var(--text-muted)" }}>Chargement…</div>;
   if (!manager) return <div style={{ padding: 32, color: "var(--text-muted)" }}>Manager introuvable.</div>;
 
@@ -71,34 +117,46 @@ export default function ManagerDetail() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1>{manager.first_name} {manager.name}</h1>
-          <p>{manager.email}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+        <div className="card" style={{ padding: '16px 24px', margin: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>
+            {manager.first_name} {manager.name}
+          </h1>
+          <p style={{ color: 'var(--text-muted)', margin: 0, marginTop: '4px' }}>Manager</p>
         </div>
-        <button className="back-btn" onClick={() => navigate("/employer/dashboard")}>
-          <IconArrowLeft /> Retour
-        </button>
       </div>
 
       {error && <p className="form-error">{error}</p>}
 
       {/* Stats */}
-      <div className="grid-3" style={{ marginBottom: 28 }}>
-        <div className="stat-card">
-          <p className="stat-label">Solde tokens</p>
+      <div style={{ marginBottom: 28, display: 'flex', gap: 16 }}>
+        <div 
+          className="stat-card" 
+          style={{ maxWidth: '300px', flex: 1, cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+          onClick={() => { setQuickTarget('team'); setQuickAmount(''); setQuickReason(''); setQuickError(''); setQuickSuccess(''); }}
+          onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.08)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; }}
+        >
+          <p className="stat-label">Solde équipe</p>
+          <p className="stat-value">{team?.token_balance ?? 0}</p>
+          <p className="stat-sub">tokens à distribuer</p>
+          <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <span>+ Ajouter tokens</span>
+          </div>
+        </div>
+        <div 
+          className="stat-card" 
+          style={{ maxWidth: '300px', flex: 1, cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+          onClick={() => { setQuickTarget('personal'); setQuickAmount(''); setQuickReason(''); setQuickError(''); setQuickSuccess(''); }}
+          onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.08)'; }}
+          onMouseOut={(e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; }}
+        >
+          <p className="stat-label">Solde personnel</p>
           <p className="stat-value">{manager.token_balance}</p>
-          <p className="stat-sub">tokens disponibles</p>
-        </div>
-        <div className="stat-card">
-          <p className="stat-label">Équipe</p>
-          <p className="stat-value">{teamMembers.length}</p>
-          <p className="stat-sub">membre{teamMembers.length !== 1 ? "s" : ""}</p>
-        </div>
-        <div className="stat-card">
-          <p className="stat-label">Tokens distribués</p>
-          <p className="stat-value">{tokensGiven}</p>
-          <p className="stat-sub">vers son équipe</p>
+          <p className="stat-sub">tokens persos</p>
+          <div style={{ marginTop: 12, fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <span>+ Ajouter tokens</span>
+          </div>
         </div>
       </div>
 
@@ -252,6 +310,70 @@ export default function ManagerDetail() {
           </div>
         )}
       </div>
+
+      {/* ══ Quick send modal ══ */}
+      {quickTarget && (
+        <div className="emp-modal-overlay" onClick={() => { setQuickTarget(null); setQuickError(''); setQuickSuccess(''); }}>
+          <div className="emp-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: 'var(--primary-light)', color: 'var(--primary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1rem', fontWeight: 700, flexShrink: 0,
+              }}>
+                {(manager.first_name[0] ?? '').toUpperCase()}{(manager.name[0] ?? '').toUpperCase()}
+              </div>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>{manager.first_name} {manager.name}</p>
+                <span className="token-badge" style={{ fontSize: '0.72rem' }}>
+                  {quickTarget === 'team' ? (team?.token_balance ?? 0) : manager.token_balance} tkn actuels (Compte {quickTarget === 'team' ? 'Équipe' : 'Personnel'})
+                </span>
+              </div>
+            </div>
+
+            {quickSuccess ? (
+              <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
+                <p style={{ fontSize: '1.5rem', marginBottom: 8 }}>🎉</p>
+                <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>{quickSuccess}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleQuickSend}>
+                <div className="form-group">
+                  <label className="form-label">Montant de tokens</label>
+                  <input className="form-input" type="number" min={1} value={quickAmount}
+                    onChange={(e) => setQuickAmount(e.target.value)}
+                    placeholder="ex. 20" required autoFocus />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Motif {quickTarget === 'team' ? <span style={{ fontWeight: 'normal', color: 'var(--text-muted)' }}>(optionnel)</span> : null}
+                  </label>
+                  <input className="form-input" type="text" value={quickReason} list="quick_motifs"
+                    onChange={(e) => setQuickReason(e.target.value)}
+                    placeholder="ex. Bonus trimestriel" required={quickTarget !== 'team'} />
+                  <datalist id="quick_motifs">
+                    <option value="Prime exceptionnelle" />
+                    <option value="Bon travail sur le projet" />
+                    <option value="Atteinte des objectifs" />
+                    <option value="Esprit d'équipe" />
+                    <option value="Initiative récompensée" />
+                  </datalist>
+                </div>
+                {quickError && <p className="form-error" style={{ marginBottom: 16 }}>{quickError}</p>}
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
+                  <button type="button" className="btn" onClick={() => setQuickTarget(null)} style={{ padding: '8px 16px' }}>
+                    Annuler
+                  </button>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }} disabled={!quickAmount}>
+                    Envoyer
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
