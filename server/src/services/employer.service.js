@@ -1,3 +1,18 @@
+/**
+ * employer.service.js — Business logic for employer-level management operations.
+ *
+ * Provides the features that are unique to the employer role: changing user roles within the
+ * company, and managing scheduled (recurring) token allocations to managers.
+ *
+ * Role change rules:
+ *   - Promoting an employee to manager auto-creates an empty active team for them.
+ *   - Demoting a manager back to employee dissolves their team and removes all team members,
+ *     and deactivates any scheduled allocations targeting them to prevent orphaned transfers.
+ *
+ * Scheduled allocations here are 'employer_to_manager' rules — the employer sets up a
+ * recurring budget transfer to a manager, separate from the 'scheduled_allocations' routes
+ * which handle employer-to-all-employees rules.
+ */
 const sequelize = require('../config/database');
 const { User, Team, TeamMember, TokenTransaction, ScheduledAllocation, Company } = require('../models');
 
@@ -7,6 +22,13 @@ const httpError = (message, status) => {
   return err;
 };
 
+/**
+ * Computes the next scheduled run date for a recurring allocation rule.
+ * dayOfMonth is the day of the month on which the transfer should execute (1–28).
+ * frequency is either 'monthly' or 'annual'.
+ * month is the calendar month (1–12, only used when frequency is 'annual').
+ * Returns a Date object set to 09:00 UTC on the next valid occurrence after now.
+ */
 function computeNextRun(dayOfMonth, frequency, month) {
   const now = new Date();
   const day = dayOfMonth || 1;
@@ -20,7 +42,22 @@ function computeNextRun(dayOfMonth, frequency, month) {
   return candidate;
 }
 
-const changeRole = async (employer, targetId, newRole) => {
+
+/**
+ * Changes the role of an employee within the employer's company.
+ * employer is the authenticated employer user object.
+ * targetId is the UUID of the user whose role will change.
+ * newRole must be 'manager' or 'employee'.
+ *
+ * When promoting to manager: automatically creates an active team named after the user.
+ * When demoting to employee: dissolves the manager's active team (sets dissolved_at),
+ *   closes all team memberships (sets left_at), and deactivates any scheduled allocations
+ *   targeting this manager so they stop receiving recurring budget transfers.
+ *
+ * All changes are committed atomically. Throws 404 if the target user is not found in
+ * the employer's company. Returns the updated user object without the password hash.
+ */
+const changeRole = async (employer, targetId, newRole, teamName) => {
   const target = await User.findOne({
     where: { id: targetId, company_id: employer.company_id },
   });
@@ -52,7 +89,7 @@ const changeRole = async (employer, targetId, newRole) => {
       // Auto-create an active team for the new manager
       await Team.create(
         {
-          name: `Équipe de ${target.first_name}`,
+          name: teamName || `Équipe de ${target.first_name}`,
           company_id: target.company_id,
           manager_id: targetId,
         },
@@ -61,6 +98,19 @@ const changeRole = async (employer, targetId, newRole) => {
     }
 
     await target.update({ role: newRole }, { transaction: t });
+
+    await TokenTransaction.create(
+      {
+        sender_id: employer.id,
+        receiver_id: targetId,
+        company_id: employer.company_id,
+        amount: 0,
+        type: 'role_change',
+        reason: newRole,
+      },
+      { transaction: t }
+    );
+
     await t.commit();
 
     const { password_hash: _, ...safe } = target.toJSON();
@@ -71,7 +121,14 @@ const changeRole = async (employer, targetId, newRole) => {
   }
 };
 
-const createAllocation = async (employer, { receiver_id, amount, day_of_month, frequency, month, immediate }) => {
+/**
+ * Creates a recurring token allocation rule from the employer to a specific manager.
+ * employer is the authenticated employer user. receiver_id must be the UUID of a manager
+ * within the same company. amount, day_of_month, frequency, and optionally month define the
+ * schedule. If immediate is true, also executes an instant one-time transfer right now
+ * (silently skips if the company has insufficient balance). Returns the created rule record.
+ */
+const createAllocation = async (employer, { receiver_id, amount, day_of_month, frequency, month, immediate, target_account }) => {
   const manager = await User.findOne({
     where: { id: receiver_id, company_id: employer.company_id, role: 'manager' },
   });
@@ -86,6 +143,7 @@ const createAllocation = async (employer, { receiver_id, amount, day_of_month, f
     day_of_month: day_of_month || 1,
     month: month || null,
     label: 'employer_to_manager',
+    target_account: target_account || 'personal',
     next_run_at: computeNextRun(day_of_month, frequency, month),
     active: true,
     excluded_user_ids: [],
@@ -97,14 +155,31 @@ const createAllocation = async (employer, { receiver_id, amount, day_of_month, f
       const company = await Company.findByPk(employer.company_id, { lock: true, transaction: t });
       if (company && company.token_balance >= amount) {
         await company.decrement('token_balance', { by: amount, transaction: t });
-        await manager.increment('token_balance', { by: amount, transaction: t });
+        
+        if (target_account === 'team') {
+          let team = await Team.findOne({ where: { manager_id: manager.id, dissolved_at: null }, lock: true, transaction: t });
+          if (!team) {
+            team = await Team.create({
+              name: `Équipe de ${manager.first_name || manager.name || 'Manager'}`,
+              company_id: manager.company_id,
+              manager_id: manager.id,
+              token_balance: 0
+            }, { transaction: t });
+          }
+          await team.increment('token_balance', { by: amount, transaction: t });
+
+        } else {
+          await manager.increment('token_balance', { by: amount, transaction: t });
+        }
+
         await TokenTransaction.create(
           {
             sender_id: employer.id,
             receiver_id,
             company_id: employer.company_id,
             amount,
-            type: 'employer_to_manager',
+            type: target_account === 'team' ? 'employer_to_team' : 'employer_to_manager',
+            reason: target_account === 'team' ? "Enveloppe de token pour l'équipe" : null,
           },
           { transaction: t }
         );
@@ -120,6 +195,11 @@ const createAllocation = async (employer, { receiver_id, amount, day_of_month, f
   return alloc;
 };
 
+/**
+ * Returns all 'employer_to_manager' scheduled allocation rules for a given company.
+ * company_id is the UUID of the company. Results are ordered newest first and include
+ * the manager (receiver) user details.
+ */
 const listAllocations = async (company_id) => {
   return ScheduledAllocation.findAll({
     where: { company_id, label: 'employer_to_manager' },
@@ -128,6 +208,31 @@ const listAllocations = async (company_id) => {
   });
 };
 
+
+const listTeams = async (company_id) => {
+  return Team.findAll({
+    where: { company_id, dissolved_at: null },
+    include: [
+      { model: User, as: 'manager', attributes: { exclude: ['password_hash'] } },
+      { 
+        model: TeamMember, 
+        as: 'members', 
+        where: { left_at: null }, 
+        required: false,
+        include: [{ model: User, as: 'user', attributes: { exclude: ['password_hash'] } }]
+      }
+    ],
+    order: [['name', 'ASC']]
+  });
+};
+
+/**
+ * Updates an existing 'employer_to_manager' scheduled allocation rule.
+ * employer is the authenticated employer. id is the UUID of the rule to update.
+ * body may contain amount, active (boolean to pause/resume), and day_of_month.
+ * Throws 404 if the rule is not found within the employer's company.
+ * Returns the updated rule record.
+ */
 const updateAllocation = async (employer, id, body) => {
   const alloc = await ScheduledAllocation.findOne({
     where: { id, company_id: employer.company_id, label: 'employer_to_manager' },
@@ -142,6 +247,14 @@ const updateAllocation = async (employer, id, body) => {
   return alloc;
 };
 
+/**
+ * Returns a manager's profile and their currently active team (with all active members).
+ * employer is the authenticated employer. managerId is the UUID of the manager to look up.
+ * The manager must belong to the employer's company.
+ * Returns an object with manager (the User record) and team (the active Team record with members,
+ * or null if the manager has no active team yet).
+ * Throws 404 if the manager is not found in the employer's company.
+ */
 const getManagerTeam = async (employer, managerId) => {
   const manager = await User.findOne({
     where: { id: managerId, company_id: employer.company_id, role: 'manager' },
@@ -165,4 +278,4 @@ const getManagerTeam = async (employer, managerId) => {
   return { manager, team: team || null };
 };
 
-module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam };
+module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam, listTeams };

@@ -1,21 +1,42 @@
+/**
+ * pages/Historique.tsx — Token and redemption history page, shared across all roles.
+ *
+ * Displays three tabs: "Mes tokens" (all token transactions involving the user), "Mes achats"
+ * (redemption history for employees), and "Mon équipe" (allocations sent, for employers).
+ *
+ * Additionally, for employers and for employees whose company has feedback_enabled, a live
+ * activity feed is shown below the tabs. The feed polls the transactions API every 5 seconds and
+ * highlights newly appeared entries with a brief animation. First load silently populates the known
+ * ID set without marking anything as new, so the highlight only fires on subsequent real-time events.
+ */
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userService } from '../services/user.service';
 import { marketplaceService } from '../services/marketplace.service';
 import { tokenService } from '../services/token.service';
-import type { TokenTransaction, Redemption } from '../types';
-import { fmtShort as fmt } from '../utils/date';
+import type { TokenTransaction, Redemption, AdminRedemption } from '../types';
+import { fmtShort as fmt, fmtDateTime } from '../utils/date';
 
-type Tab = 'tokens' | 'achats' | 'equipe';
+type Tab = 'tokens' | 'achats' | 'depenses';
 
 export default function Historique() {
   const { user, company } = useAuth();
-  const isManager = user?.role === 'manager' || user?.role === 'employee' || user?.role === 'employer';
-  const [tab, setTab] = useState<Tab>('tokens');
-  const [transactions, setTransactions] = useState<TokenTransaction[]>([]);
+  const isManager = user?.role === 'manager' || user?.role === 'employer';
+  
+  // Default tab selection based on role
+  const [tab, setTab] = useState<Tab>(isManager ? 'depenses' : 'tokens');
+  
+  // Employee-specific states
+  const [transactions, setTransactions] = useState<TokenTransaction[]>([]); 
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
-  const [teamTx, setTeamTx] = useState<TokenTransaction[]>([]);
+  
+  // Employer/Manager-specific states
+  const [companyTx, setCompanyTx] = useState<TokenTransaction[]>([]); 
+  const [companyOrders, setCompanyOrders] = useState<AdminRedemption[]>([]);
+  
   const [loading, setLoading] = useState(true);
+  
+  // Feed states
   const [feed, setFeed] = useState<TokenTransaction[]>([]);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const knownIds = useRef<Set<string>>(new Set());
@@ -24,24 +45,22 @@ export default function Historique() {
   useEffect(() => {
     if (!user?.id) return;
 
-    const tasks: Promise<unknown>[] = [
-      userService.getHistory(user.id).then(setTransactions).catch(() => {}),
-    ];
+    const tasks: Promise<unknown>[] = [];
 
-    if (user.role === 'employee') {
-      tasks.push(
-        marketplaceService.getOrders().then(setRedemptions).catch(() => {}),
-      );
+    // Only employees (or manager viewed as employee) can receive tokens directly in the old way
+    if (!isManager || user.role === 'manager') {
+      tasks.push(userService.getHistory(user.id).then(setTransactions).catch(() => {}));
+      tasks.push(marketplaceService.getOrders().then(setRedemptions).catch(() => {}));
     }
 
-    if (user.role === 'employer') {
-      tasks.push(
-        tokenService.getTransactions({ userId: user.id }).then(setTeamTx).catch(() => {}),
-      );
+    // Global transactions and orders for Managers/Employers
+    if (isManager) {
+      tasks.push(tokenService.getTransactions().then(setCompanyTx).catch(() => {}));
+      tasks.push(marketplaceService.getCompanyOrders().then(setCompanyOrders).catch(() => {}));
     }
 
     Promise.all(tasks).finally(() => setLoading(false));
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, isManager]);
 
   const showFeed = user?.role === 'employer' || (user?.role === 'employee' && company?.feedback_enabled === true);
 
@@ -77,130 +96,163 @@ export default function Historique() {
 
   if (loading) return <div style={{ padding: 32, color: 'var(--text-muted)' }}>Chargement…</div>;
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'tokens', label: 'Mes tokens' },
-    { key: 'achats', label: 'Mes achats' },
-    ...(user?.role === 'employer' ? [{ key: 'equipe' as Tab, label: 'Mon équipe' }] : []),
-  ];
+  // Build Tabs dynamically
+  const tabs: { key: Tab; label: string }[] = [];
+
+  // Unified timeline for employees
+  const employeeTimeline = !isManager
+    ? [...transactions.map(t => ({ ...t, _kind: 'token' })), ...redemptions.map(r => ({ ...r, _kind: 'redemption' }))]
+        .sort((a, b) => {
+          const da = new Date(a._kind === 'token' ? a.created_at : a.redeemed_at).getTime();
+          const db = new Date(b._kind === 'token' ? b.created_at : b.redeemed_at).getTime();
+          return db - da;
+        })
+    : [];
+
+  // Unified timeline for managers and employers
+  const managerTimeline = isManager
+    ? [...companyTx.map(t => ({ ...t, _kind: 'token' })), ...companyOrders.map(r => ({ ...r, _kind: 'redemption' }))]
+        .sort((a, b) => {
+          const da = new Date(a._kind === 'token' ? a.created_at : a.redeemed_at).getTime();
+          const db = new Date(b._kind === 'token' ? b.created_at : b.redeemed_at).getTime();
+          return db - da;
+        })
+    : [];
 
   return (
     <div>
-      <div className={`page-header page-header--centered ${isManager ? 'page-header--manager' : ''}`}>
-        <h1>Suivi de vos tokens et de vos échanges</h1>
-      </div>
-
       {/* Tabs */}
-      <div className="hist-tabs">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            className={`hist-tab ${tab === t.key ? 'hist-tab--active' : ''}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      {tabs.length > 0 && (
+        <div className="hist-tabs">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              className={`hist-tab ${tab === t.key ? 'hist-tab--active' : ''}`}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Mes tokens */}
-      {tab === 'tokens' && (
+      {/* Unified Timeline (Employee only) */}
+      {!isManager && (
         <div className="card" style={{ marginTop: 16 }}>
-          {transactions.length === 0 ? (
-            <p className="empty-state">Aucune transaction de tokens.</p>
+          {employeeTimeline.length === 0 ? (
+            <p className="empty-state">Aucun historique disponible.</p>
           ) : (
-            <div className="table-wrap">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Montant</th>
-                    <th>Motif</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map((tx) => (
-                    <tr key={tx.id}>
-                      <td><span className="token-badge">+{tx.amount}</span></td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{tx.type || '—'}</td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{fmt(tx.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {employeeTimeline.map((item) => {
+                if (item._kind === 'token') {
+                  const tx = item as TokenTransaction & { _kind: 'token' };
+                  if (tx.type === 'role_change') {
+                    const text = tx.reason === 'manager' 
+                      ? 'Promotion au poste de Manager' 
+                      : 'Rétrogradation au poste de Collaborateur';
+                    return (
+                      <div key={`tx-${tx.id}`} style={{ paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>{text}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
+                          {fmtDateTime(tx.created_at)}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={`tx-${tx.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>Tokens reçus <span className="token-badge" style={{ marginLeft: 6 }}>+{tx.amount}</span></p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Motif : {tx.reason || tx.type || '—'}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(tx.created_at)}</p>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  const r = item as Redemption & { _kind: 'redemption' };
+                  return (
+                    <div key={`red-${r.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>Achat de bon <span className="token-badge" style={{ background: '#fef2f2', color: '#991b1b', marginLeft: 6 }}>-{r.voucher?.token_cost ?? '?'}</span></p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Offre : {r.voucher?.title || '—'} ({r.voucher?.partner || '—'})</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(r.redeemed_at)}</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span className="promo-code" style={{ fontSize: '0.75rem' }}>{r.promo_code}</span>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* Mes achats */}
-      {tab === 'achats' && (
+      {/* Unified Timeline (Manager/Employer) */}
+      {isManager && (
         <div className="card" style={{ marginTop: 16 }}>
-          {redemptions.length === 0 ? (
-            <p className="empty-state">Aucun bon d'achat racheté.</p>
+          {managerTimeline.length === 0 ? (
+            <p className="empty-state">Aucun historique d'équipe disponible.</p>
           ) : (
-            <div className="table-wrap">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Code promo</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {redemptions.map((r) => (
-                    <tr key={r.id}>
-                      <td>
-                        <span className="promo-code">{r.promo_code}</span>
-                      </td>
-                      <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
-                        {fmt(r.redeemed_at)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {managerTimeline.map((item) => {
+                if (item._kind === 'token') {
+                  const tx = item as TokenTransaction & { _kind: 'token' };
+                  if (tx.type === 'role_change') {
+                    const text = tx.reason === 'manager' 
+                      ? 'a été promu(e) au poste de Manager' 
+                      : 'a été rétrogradé(e) au poste de Collaborateur';
+                    const receiverName = tx.receiver?.first_name || tx.receiver?.name || 'Un collaborateur';
+                    return (
+                      <div key={`mtx-${tx.id}`} style={{ paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>{receiverName} {text}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
+                          {fmtDateTime(tx.created_at)}
+                        </p>
+                      </div>
+                    );
+                  }
+                  let receiverName = tx.receiver?.first_name || tx.receiver?.name || 'Un collaborateur';
+                  if (tx.type === 'employer_to_team') {
+                    receiverName = `L'équipe de ${tx.receiver?.first_name} ${tx.receiver?.name}`;
+                  }
+                  const senderName = tx.sender?.first_name || tx.sender?.name || 'Système';
+                  return (
+                    <div key={`mtx-${tx.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                          {receiverName} a reçu des tokens <span className="token-badge" style={{ marginLeft: 6 }}>+{tx.amount}</span>
+                        </p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Motif : {tx.reason || tx.type || '—'} (par {senderName})</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(tx.created_at)}</p>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  const r = item as AdminRedemption & { _kind: 'redemption' };
+                  const buyerName = r.user?.first_name || r.user?.name || 'Un collaborateur';
+                  const offerName = r.voucher?.title || '—';
+                  const partnerName = r.voucher?.partner || '—';
+                  return (
+                    <div key={`mred-${r.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                          {buyerName} a acheté le bon "{offerName}" <span className="token-badge" style={{ background: '#fef2f2', color: '#991b1b', marginLeft: 6 }}>-{r.voucher?.token_cost ?? '?'}</span>
+                        </p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Partenaire : {partnerName}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(r.redeemed_at)}</p>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* Mon équipe (employer only) */}
-      {tab === 'equipe' && (
-        <div className="card" style={{ marginTop: 16 }}>
-          {teamTx.length === 0 ? (
-            <p className="empty-state">Aucune allocation effectuée.</p>
-          ) : (
-            <div className="table-wrap">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Collaborateur</th>
-                    <th>Tokens</th>
-                    <th>Motif</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teamTx
-                    .filter((tx) => tx.sender_id === user?.id)
-                    .map((tx) => (
-                      <tr key={tx.id}>
-                        <td style={{ fontWeight: 500, fontSize: '0.82rem' }}>
-                          {tx.receiver?.first_name || tx.receiver?.name || tx.receiver_id?.slice(0, 8)}
-                        </td>
-                        <td><span className="token-badge">{tx.amount}</span></td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{tx.type || '—'}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{fmt(tx.created_at)}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Fil d'activité entreprise — temps réel, visible pour les employeurs et les employés si activé */}
+      {/* Fil d'activité entreprise — temps réel */}
       {showFeed && (
         <div className="card feed-card" style={{ marginTop: 24 }}>
           <div className="feed-header">

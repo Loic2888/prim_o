@@ -1,10 +1,21 @@
+/**
+ * services/token.service.ts — Client-side wrapper for token management API endpoints.
+ *
+ * Covers employer token allocation, balance queries, transaction history, admin deduction,
+ * and Stripe subscription management. All methods return typed data extracted from the
+ * standard API response envelope { success, data }.
+ */
 import api from './api';
 import type { TokenTransaction, ApiResponse } from '../types';
 
 interface AllocatePayload {
-  receiver_id: string;
+  target_type: string;
+  receiver_id?: string | null;
+  target_team_id?: string | null;
+  excluded_user_ids?: string[];
   amount: number;
   reason?: string;
+  target_account?: 'personal' | 'team';
 }
 
 export const tokenService = {

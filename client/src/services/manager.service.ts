@@ -1,3 +1,11 @@
+/**
+ * services/manager.service.ts — Client-side wrapper for manager and employer-facing team management APIs.
+ *
+ * Covers two groups of endpoints:
+ *   Employer-facing: viewing a manager's team, promoting/demoting users.
+ *   Manager-facing: reading their own team, managing members, distributing tokens,
+ *   and managing recurring scheduled allocations to employees.
+ */
 import api from "./api";
 import type { ApiResponse, User, Team, ScheduledAllocation } from "../types";
 
@@ -10,10 +18,10 @@ export const managerService = {
     return data.data;
   },
 
-  async promoteToManager(employeeId: string): Promise<User> {
+  async promoteToManager(employeeId: string, teamName: string): Promise<User> {
     const { data } = await api.patch<ApiResponse<User>>(
       `/employer/employees/${employeeId}/role`,
-      { role: "manager" }
+      { role: "manager", teamName }
     );
     return data.data;
   },

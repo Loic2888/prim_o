@@ -8,8 +8,19 @@ import { useFavorites } from '../hooks/useFavorites';
 import { useCart } from '../hooks/useCart';
 import { resolveImageUrl } from '../utils/imageUrl';
 import { getCategory, getCategoryColor } from '../utils/category';
+import { MOTIFS_ALLOCATION } from '../utils/motifs';
+import MotifSelectionModal from '../components/MotifSelectionModal';
 import type { Voucher, Redemption, Team, ScheduledAllocation, User, TokenTransaction } from '../types';
 import { fmtShort } from '../utils/date';
+
+function getFontSizeForNumber(num: number): string {
+  const len = String(num).length;
+  if (len <= 3) return '1.8rem';
+  if (len === 4) return '1.5rem';
+  if (len === 5) return '1.25rem';
+  if (len === 6) return '1.1rem';
+  return '0.9rem';
+}
 
 /* ── Gold coin SVG ── */
 function CoinSVG({ size = 100 }: { size?: number }) {
@@ -231,6 +242,7 @@ function ManagerPourToi() {
   const [quickMember, setQuickMember]   = useState<User | null>(null);
   const [quickAmount, setQuickAmount]   = useState('');
   const [quickReason, setQuickReason]   = useState('');
+  const [showQuickMotifModal, setShowQuickMotifModal] = useState(false);
   const [quickGiving, setQuickGiving]   = useState(false);
   const [quickError, setQuickError]     = useState('');
   const [quickSuccess, setQuickSuccess] = useState('');
@@ -246,6 +258,7 @@ function ManagerPourToi() {
 
   /* Scheduled allocation modal */
   const [showSchedModal, setShowSchedModal] = useState(false);
+  const [showSchedMotifModal, setShowSchedMotifModal] = useState(false);
   const [schedForm, setSchedForm]           = useState(EMPTY_SCHED);
   const [schedError, setSchedError]         = useState('');
   const [schedLoading, setSchedLoading]     = useState(false);
@@ -284,7 +297,7 @@ function ManagerPourToi() {
     } finally { setQuickGiving(false); }
   }
 
-  /* Add existing collaborator */
+  /* Add collaborator */
   async function handleAddExisting(e: React.FormEvent) {
     e.preventDefault();
     if (!addingId) return;
@@ -298,7 +311,6 @@ function ManagerPourToi() {
     } finally { setAddingLoad(false); }
   }
 
-  /* Create new collaborator */
   async function handleCreateCollaborator(e: React.FormEvent) {
     e.preventDefault();
     setCreateLoad(true); setCreateError('');
@@ -367,7 +379,7 @@ function ManagerPourToi() {
           <div style={{ flex: 1 }} />
 
           {/* Right — coin + token count window */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, transform: 'translateY(55px)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, transform: 'translateY(35px)' }}>
             {team?.name && (
               <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.2rem', marginBottom: 4, letterSpacing: '0.02em', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
                 {team.name}
@@ -379,17 +391,48 @@ function ManagerPourToi() {
               alt="Token" 
               style={{ width: '140px', height: '140px', objectFit: 'contain', filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.4))', zIndex: 2, marginBottom: '-20px' }} 
             />
-            <div style={{ background: '#303236', border: '3px solid #ffffff', borderRadius: '16px', padding: '18px 24px 10px 24px', textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', minWidth: '180px' }}>
-              <p style={{ color: '#ffffff', fontSize: '2.2rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>
-                {user?.token_balance ?? 0}
-              </p>
-              <p style={{ color: '#ffffff', fontSize: '0.82rem', fontWeight: 500, marginTop: 4, opacity: 0.8 }}>
-                Tokens stock
-              </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ background: '#303236', border: '3px solid #ffffff', borderRadius: '16px', padding: '18px 16px 10px 16px', textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', minWidth: '110px' }}>
+                <p style={{ color: '#ffffff', fontSize: getFontSizeForNumber(user?.team_token_balance ?? 0), fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>
+                  {user?.team_token_balance ?? 0}
+                </p>
+                <p style={{ color: '#ffffff', fontSize: '0.75rem', fontWeight: 500, marginTop: 4, opacity: 0.8, whiteSpace: 'nowrap' }}>
+                  Stock Équipe
+                </p>
+              </div>
+              <div style={{ background: '#303236', border: '3px solid #ffffff', borderRadius: '16px', padding: '18px 16px 10px 16px', textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', minWidth: '110px' }}>
+                <p style={{ color: '#ffffff', fontSize: getFontSizeForNumber(user?.token_balance ?? 0), fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>
+                  {user?.token_balance ?? 0}
+                </p>
+                <p style={{ color: '#ffffff', fontSize: '0.75rem', fontWeight: 500, marginTop: 4, opacity: 0.8, whiteSpace: 'nowrap' }}>
+                  Mes Tokens
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ══ M'attribuer des tokens ══ */}
+      {user?.role === 'manager' && (
+        <div style={{ marginBottom: 28, marginTop: 24 }}>
+          <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'linear-gradient(135deg, rgba(240, 168, 0, 0.1), rgba(240, 168, 0, 0.05))', border: '1px solid rgba(240, 168, 0, 0.2)' }}>
+            <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
+              <p style={{ fontWeight: 700, fontSize: '0.95rem', color: '#000', marginBottom: 2 }}>M'attribuer des tokens</p>
+              <p style={{ fontSize: '0.75rem', color: '#666', lineHeight: 1.3 }}>
+                Transférer depuis le stock équipe vers mon compte personnel.
+              </p>
+            </div>
+            <button 
+              className="manager-collab-btn"
+              onClick={(e) => { e.stopPropagation(); setQuickMember(user); setQuickAmount(''); setQuickReason(''); setQuickError(''); setQuickSuccess(''); }}
+              style={{ flexShrink: 0 }}
+            >
+              + Transférer
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ══ Mes collaborateurs ══ */}
       <div style={{ marginBottom: 28, marginTop: 55 }}>
@@ -603,10 +646,31 @@ function ManagerPourToi() {
                     placeholder="ex. 20" required autoFocus />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Motif (facultatif)</label>
-                  <input className="form-input" type="text" value={quickReason}
-                    onChange={(e) => setQuickReason(e.target.value)}
-                    placeholder="ex. Excellent accueil client" />
+                  <label className="form-label">Motif</label>
+                  <div
+                    onClick={() => setShowQuickMotifModal(true)}
+                    className="form-input"
+                    style={{
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      color: quickReason ? "var(--text)" : "var(--text-muted)",
+                    }}
+                  >
+                    {quickReason ? quickReason : "Sélectionner un motif..."}
+                  </div>
+                  <input type="hidden" value={quickReason} required />
+                  
+                  {showQuickMotifModal && (
+                    <MotifSelectionModal
+                      initialMotif={quickReason}
+                      onSelect={(motif) => {
+                        setQuickReason(motif);
+                        setShowQuickMotifModal(false);
+                      }}
+                      onClose={() => setShowQuickMotifModal(false)}
+                    />
+                  )}
                 </div>
                 {quickError && <p className="form-error">{quickError}</p>}
                 <div className="emp-modal-actions">
@@ -679,10 +743,31 @@ function ManagerPourToi() {
                 )}
               </div>
               <div className="form-group">
-                <label className="form-label">Motif (optionnel)</label>
-                <input className="form-input" type="text" placeholder="Ex : Prime mensuelle…"
-                  value={schedForm.label}
-                  onChange={(e) => setSchedForm({ ...schedForm, label: e.target.value })} />
+                <label className="form-label">Motif</label>
+                <div
+                  onClick={() => setShowSchedMotifModal(true)}
+                  className="form-input"
+                  style={{
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    color: schedForm.label ? "var(--text)" : "var(--text-muted)",
+                  }}
+                >
+                  {schedForm.label ? schedForm.label : "Sélectionner un motif..."}
+                </div>
+                <input type="hidden" value={schedForm.label} required />
+                
+                {showSchedMotifModal && (
+                  <MotifSelectionModal
+                    initialMotif={schedForm.label}
+                    onSelect={(motif) => {
+                      setSchedForm({ ...schedForm, label: motif });
+                      setShowSchedMotifModal(false);
+                    }}
+                    onClose={() => setShowSchedMotifModal(false)}
+                  />
+                )}
               </div>
               {schedError && <p className="form-error">{schedError}</p>}
               <div className="emp-modal-actions">

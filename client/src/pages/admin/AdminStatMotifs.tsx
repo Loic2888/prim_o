@@ -1,3 +1,11 @@
+/**
+ * pages/admin/AdminStatMotifs.tsx — Allocation reason (motif) breakdown for the admin.
+ *
+ * Fetches all token transactions, filters to employer-to-employee allocation entries, and
+ * computes a frequency table grouped by the transaction type/reason field. Results are sorted
+ * by count descending and displayed as a ranked list with percentage contribution. Transactions
+ * with no reason are labelled 'Sans motif'.
+ */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenService } from '../../services/token.service';
@@ -70,7 +78,7 @@ export default function AdminStatMotifs() {
           background-color: rgba(255, 255, 255, 0.15) !important;
         }
       `}</style>
-      <div className="page-header">
+      <div className="page-header page-header--clean">
         <div style={{ width: '100%', textAlign: 'center' }}>
           <h1>Statistiques motifs de don</h1>
           <p>{total} allocation{total !== 1 ? 's' : ''} analysée{total !== 1 ? 's' : ''}</p>

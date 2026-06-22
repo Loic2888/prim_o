@@ -1,3 +1,12 @@
+/**
+ * pages/manager/CollaborateurDetail.tsx — Team member detail page, visible to the manager.
+ *
+ * Fetches the collaborator's profile and full token transaction history by :id param.
+ * Displays initials avatar, stat cards (current balance, tokens received from this manager,
+ * account creation date), personal info fields, and a colour-coded token history table.
+ * Read-only — managers cannot edit collaborator profiles from this page.
+ * Back button navigates to /pour-toi (the manager home page).
+ */
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { userService } from "../../services/user.service";
@@ -40,16 +49,8 @@ export default function CollaborateurDetail() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header page-header--clean">
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: "50%",
-            background: "var(--primary-light)", color: "var(--primary)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontWeight: 700, fontSize: "1.1rem", flexShrink: 0,
-          }}>
-            {initials}
-          </div>
           <div>
             <h1 style={{ marginBottom: 2 }}>{collab.first_name} {collab.name}</h1>
             <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{collab.email}</p>
@@ -61,7 +62,7 @@ export default function CollaborateurDetail() {
       </div>
 
       {/* Stats */}
-      <div className="grid-3" style={{ marginBottom: 28 }}>
+      <div className="grid-2" style={{ marginBottom: 28 }}>
         <div className="stat-card">
           <p className="stat-label">Solde tokens</p>
           <p className="stat-value">{collab.token_balance}</p>
@@ -71,11 +72,6 @@ export default function CollaborateurDetail() {
           <p className="stat-label">Tokens reçus</p>
           <p className="stat-value">{tokensReceived}</p>
           <p className="stat-sub">de votre part</p>
-        </div>
-        <div className="stat-card">
-          <p className="stat-label">Membre depuis</p>
-          <p className="stat-value" style={{ fontSize: "1.1rem" }}>{fmt(collab.created_at)}</p>
-          <p className="stat-sub">dans l'entreprise</p>
         </div>
       </div>
 

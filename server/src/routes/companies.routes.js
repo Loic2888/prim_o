@@ -1,3 +1,14 @@
+/**
+ * companies.routes.js — Route definitions for company management.
+ *
+ * POST   /            — public; create a company (employer self-onboarding step 1)
+ * GET    /:id/public  — public; minimal company info for QR-code registration
+ * GET    /            — admin only; list all companies
+ * GET    /:id         — any authenticated user; fetch one company
+ * PUT    /:id         — employer (own company) or admin; update company fields
+ * POST   /:id/tokens  — admin only; grant tokens to a company without Stripe
+ * DELETE /:id         — admin only; delete company and all its data
+ */
 const { Router } = require('express');
 const { body, param } = require('express-validator');
 const companiesController = require('../controllers/companies.controller');
@@ -9,14 +20,13 @@ const router = Router();
 
 const companyBodyRules = [
   body('name').trim().notEmpty().withMessage('name is required'),
-  body('email').optional().isEmail().withMessage('valid email is required'),
-  body('street').optional().trim().notEmpty().withMessage('street must not be empty'),
+  body('email').isEmail().withMessage('valid email is required'),
+  body('street').trim().notEmpty().withMessage('street must not be empty'),
   body('zip_code')
-    .optional()
     .isNumeric()
     .isLength({ min: 5, max: 5 })
     .withMessage('zip_code must be 5 digits'),
-  body('city').optional().trim().notEmpty().withMessage('city must not be empty'),
+  body('city').trim().notEmpty().withMessage('city must not be empty'),
   body('siret')
     .optional()
     .isNumeric()

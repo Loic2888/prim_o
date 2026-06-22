@@ -1,3 +1,18 @@
+/**
+ * pages/employee/Catalogue.tsx — Main marketplace page for browsing and redeeming vouchers.
+ *
+ * Default view shows a "Populaires" carousel (up to 20 items ranked by favorite_count then
+ * recency) followed by one carousel per category present in the catalogue. Each category row
+ * links to a CategorieDetail page for the full paginated list.
+ *
+ * When a search query or category filter is active, the carousels are replaced by a flat grid
+ * of matching vouchers. The search input displays partner name auto-completion suggestions
+ * (up to 6, filtered by prefix). Suggestions are dismissed on outside click or Escape.
+ *
+ * Admins see a "Modifier" button on each card that navigates to the admin voucher detail editor.
+ * All other users see favorite and cart toggles. On redemption, the user/company balance is
+ * refreshed via AuthContext.
+ */
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -237,7 +252,7 @@ export default function Catalogue() {
 
   return (
     <div>
-      <div className={`page-header page-header--centered ${isManager ? 'page-header--manager' : ''}`}>
+      <div className={`page-header page-header--clean page-header--centered ${isManager ? 'page-header--manager' : ''}`}>
         <h1>Échangez vos tokens contre des bons d'achat</h1>
       </div>
 

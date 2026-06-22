@@ -2,7 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../hooks/useCart';
-
+/**
+ * Desktop top navigation bar (hidden on mobile, shown on wider screens).
+ *
+ * Renders the PRIM'O brand, role-specific navigation links, a "Voir plus" dropdown
+ * containing secondary links and logout, and a right-side token balance display.
+ * Employers also see an 'Acheter' button and, when on /panier, a 'Valider le panier'
+ * button that dispatches a custom browser event consumed by the Panier page.
+ * The dropdown closes on outside clicks.
+ */
 export default function TopNav() {
   const { user, company, logout } = useAuth();
   const { count } = useCart();
@@ -43,14 +51,18 @@ export default function TopNav() {
     <header className={`top-nav ${isManager ? 'top-nav--manager' : ''} ${isManager && isPourToi ? 'top-nav--transparent' : ''} ${isManager && !isPourToi ? 'no-shadow' : ''}`}>
       <div className="top-nav-inner">
         {/* Brand */}
-        <Link to="/pour-toi" className="top-nav-brand">PRIM'O</Link>
+        <Link to={user?.role === 'employer' ? '/employer/dashboard' : user?.role === 'admin' ? '/admin/dashboard' : '/pour-toi'} className="top-nav-brand" style={{ display: 'flex', alignItems: 'baseline', gap: 2, textDecoration: 'none' }}>
+          <img src="/logo-primo.png" alt="prim'o" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+        </Link>
 
         {/* Nav links + Voir plus (à gauche) */}
         <nav className="top-nav-links">
           {isAdmin ? (
             <>
-              <NavLink to="/admin/stats"     className={({ isActive }) => link(isActive)}>Tableau de bord</NavLink>
-              <NavLink to="/admin/users"     className={({ isActive }) => link(isActive)}>Utilisateurs</NavLink>
+              <NavLink to="/admin/dashboard" className={({ isActive }) => link(isActive)}>Entreprise</NavLink>
+              <NavLink to="/catalogue"       className={({ isActive }) => link(isActive)}>Catalogue</NavLink>
+              <NavLink to="/admin/stats"     className={({ isActive }) => link(isActive)}>Statistique</NavLink>
+              <NavLink to="/admin/bons"      className={({ isActive }) => link(isActive)}>Bon</NavLink>
             </>
           ) : (
             <>

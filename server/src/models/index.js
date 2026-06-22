@@ -1,3 +1,21 @@
+/**
+ * models/index.js — Sequelize model registry and association definitions.
+ *
+ * Imports every model, initialises each one against the shared Sequelize instance, then
+ * declares all foreign-key associations. The association setup must live here (rather than
+ * in individual model files) to avoid circular-require issues between models that reference
+ * each other.
+ *
+ * Re-exports all models so the rest of the codebase can import from '../models' without
+ * knowing which file each model lives in.
+ *
+ * Relationship summary:
+ *   Company  1──* User, TokenTransaction, ScheduledAllocation, Team
+ *   User     1──* Redemption, TokenTransaction (as sender or receiver),
+ *                 Favorite, ScheduledAllocation, Team (as manager), TeamMember
+ *   Voucher  1──* Redemption, Favorite
+ *   Team     1──* TeamMember
+ */
 const sequelize = require('../config/database');
 
 // 1. Import everything
@@ -55,6 +73,9 @@ ScheduledAllocation.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
 
 User.hasMany(ScheduledAllocation, { foreignKey: 'receiver_id', as: 'received_scheduled_allocations' });
 ScheduledAllocation.belongsTo(User, { foreignKey: 'receiver_id', as: 'receiver' });
+
+Team.hasMany(ScheduledAllocation, { foreignKey: 'target_team_id', as: 'scheduled_allocations' });
+ScheduledAllocation.belongsTo(Team, { foreignKey: 'target_team_id', as: 'target_team' });
 
 // Team associations
 Company.hasMany(Team, { foreignKey: 'company_id', as: 'teams' });
