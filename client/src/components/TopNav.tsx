@@ -101,7 +101,13 @@ export default function TopNav() {
                 <div className="top-nav-drop-user">
                   <p className="top-nav-drop-name">{user?.first_name || user?.name}</p>
                   <p className="top-nav-drop-email">{user?.email}</p>
-                  <span className="menu-sheet-role">{user?.role}</span>
+                  <span className="menu-sheet-role">
+                    {user?.role === 'employee' ? 'collaborateur' :
+                     user?.role === 'employer' ? 'employeur' :
+                     user?.role === 'manager' ? 'manager' :
+                     user?.role === 'admin' ? 'admin' :
+                     user?.role}
+                  </span>
                 </div>
                 <div className="top-nav-drop-divider" />
                 {[
