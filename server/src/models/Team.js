@@ -33,6 +33,11 @@ const initTeam = (sequelize) => {
         allowNull: true,
         defaultValue: null,
       },
+      token_balance: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        allowNull: false,
+      },
     },
     {
       sequelize,

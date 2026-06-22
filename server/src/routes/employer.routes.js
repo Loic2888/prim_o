@@ -25,11 +25,14 @@ router.get(
   employerController.getManagerTeam
 );
 
+router.get('/teams', employerController.listTeams);
+
 router.patch(
   '/employees/:id/role',
   [
     param('id').isUUID().withMessage('id must be a valid UUID'),
     body('role').isIn(['manager', 'employee']).withMessage('role must be manager or employee'),
+    body('teamName').if(body('role').equals('manager')).notEmpty().withMessage('teamName is required when promoting to manager'),
     validate,
   ],
   employerController.changeRole

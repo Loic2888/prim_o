@@ -16,12 +16,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { marketplaceService } from '../services/marketplace.service';
 import { useCart } from '../hooks/useCart';
+import { useFavorites } from '../hooks/useFavorites';
+import { CarouselRow } from '../components/CarouselRow';
 import type { Voucher } from '../types';
 import { fmtShort } from '../utils/date';
 
 export default function Panier() {
   const { user, company, refreshUser, refreshCompany } = useAuth();
-  const { remove, isInCart, addedAt } = useCart();
+  const { remove, isInCart, addedAt, toggle: toggleCart } = useCart();
+  const { isFavorite, toggle: toggleFav } = useFavorites();
   const [allVouchers, setAllVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
@@ -34,6 +37,7 @@ export default function Panier() {
   }, []);
 
   const cartVouchers = allVouchers.filter((v) => isInCart(v.id));
+  const weeklyOffers = allVouchers.filter((v) => v.available && v.is_weekly);
   const balance = user?.role === 'employer' ? (company?.token_balance ?? 0) : (user?.token_balance ?? 0);
 
   const handleRedeemAll = useCallback(async () => {
@@ -95,6 +99,21 @@ export default function Panier() {
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{fmtShort(redeemed_at)}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Offres de la semaine (Carousel) */}
+      {weeklyOffers.length > 0 && (
+        <div style={{ marginBottom: 24, margin: '0 calc(-1 * var(--page-px)) 24px', padding: '0 var(--page-px)' }}>
+          <CarouselRow
+            title="Offres de la semaine"
+            vouchers={weeklyOffers}
+            userBalance={balance}
+            isFavorite={isFavorite}
+            onToggle={toggleFav}
+            isInCart={isInCart}
+            onCartToggle={toggleCart}
+          />
         </div>
       )}
 

@@ -15,6 +15,7 @@ export interface User {
   first_name: string;
   role: UserRole;
   token_balance: number;
+  team_token_balance?: number;
   company_id: string | null;
   created_at: string;
   entry_date?: string | null;
@@ -53,6 +54,7 @@ export interface TokenTransaction {
     name: string;
     first_name: string;
     email: string;
+    team_id?: string;
   } | null;
 }
 
@@ -107,6 +109,7 @@ export interface Team {
   name: string;
   company_id: string;
   manager_id: string;
+  token_balance: number;
   dissolved_at: string | null;
   created_at: string;
   members?: TeamMember[];
@@ -150,5 +153,9 @@ export interface ScheduledAllocation {
   active: boolean;
   excluded_user_ids: string[];
   created_at: string;
+  target_type: 'user' | 'all_company' | 'all_employees' | 'all_managers' | 'team' | 'team_and_manager';
+  target_team_id: string | null;
+  target_account?: 'personal' | 'team';
   receiver?: { id: string; first_name: string; name: string; email: string } | null;
+  target_team?: { id: string; name: string } | null;
 }

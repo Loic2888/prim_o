@@ -32,6 +32,20 @@ const initScheduledAllocation = (sequelize) => {
         primaryKey: true,
         allowNull: false,
       },
+      target_type: {
+        type: DataTypes.ENUM('user', 'all_company', 'all_employees', 'all_managers', 'team', 'team_and_manager'),
+        defaultValue: 'all_company',
+        allowNull: false,
+      },
+      target_team_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      target_account: {
+        type: DataTypes.ENUM('personal', 'team'),
+        defaultValue: 'personal',
+        allowNull: false,
+      },
       amount: {
         type: DataTypes.INTEGER,
         allowNull: false,

@@ -252,7 +252,7 @@ export default function Catalogue() {
 
   return (
     <div>
-      <div className={`page-header page-header--centered ${isManager ? 'page-header--manager' : ''}`}>
+      <div className={`page-header page-header--clean page-header--centered ${isManager ? 'page-header--manager' : ''}`}>
         <h1>Échangez vos tokens contre des bons d'achat</h1>
       </div>
 

@@ -6,7 +6,7 @@
  * and is used before login, so it does not need a Bearer token.
  */
 import api from "./api";
-import type { Company, ApiResponse } from "../types";
+import type { Company, ApiResponse, Team } from "../types";
 
 interface CreateCompanyPayload {
   name: string;
@@ -26,6 +26,11 @@ export const companyService = {
 
   async getById(id: string): Promise<Company> {
     const { data } = await api.get<ApiResponse<Company>>(`/companies/${id}`);
+    return data.data;
+  },
+
+  async getTeams(): Promise<Team[]> {
+    const { data } = await api.get<ApiResponse<Team[]>>("/employer/teams");
     return data.data;
   },
 

@@ -18,10 +18,10 @@ export const managerService = {
     return data.data;
   },
 
-  async promoteToManager(employeeId: string): Promise<User> {
+  async promoteToManager(employeeId: string, teamName: string): Promise<User> {
     const { data } = await api.patch<ApiResponse<User>>(
       `/employer/employees/${employeeId}/role`,
-      { role: "manager" }
+      { role: "manager", teamName }
     );
     return data.data;
   },

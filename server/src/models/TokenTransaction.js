@@ -47,6 +47,11 @@ const initTokenTransaction = (sequelize) => {
         type: DataTypes.STRING, // Or DataTypes.ENUM('credit', 'distribution', 'refund') if strictly defined
         allowNull: false,
       },
+      // 3.5. Reason for transaction
+      reason: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       // 4. Stripe Reference (Optional - only for external payments made by companies)
       stripe_payment_id: {
         type: DataTypes.STRING,

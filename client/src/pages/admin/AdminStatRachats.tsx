@@ -184,7 +184,7 @@ export default function AdminStatRachats() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header page-header--clean">
         <div>
           <h1>Statistiques rachats</h1>
           <p>{filtered.length} échange{filtered.length !== 1 ? 's' : ''}{period !== 'tout' ? ` sur les ${period}` : ' au total'}</p>

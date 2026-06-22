@@ -52,6 +52,11 @@ export const marketplaceService = {
     return data.data;
   },
 
+  async getCompanyOrders(): Promise<AdminRedemption[]> {
+    const { data } = await api.get<ApiResponse<AdminRedemption[]>>('/marketplace/company-orders');
+    return data.data;
+  },
+
   async adminGetVouchers(): Promise<AdminVoucher[]> {
     const { data } = await api.get<ApiResponse<AdminVoucher[]>>('/marketplace/admin/vouchers');
     return data.data;

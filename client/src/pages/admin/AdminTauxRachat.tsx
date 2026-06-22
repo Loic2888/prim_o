@@ -54,7 +54,7 @@ export default function AdminTauxRachat() {
 
   return (
     <div>
-      <div className="page-header">
+      <div className="page-header page-header--clean">
         <div>
           <h1>Taux de rachat</h1>
           <p>Performance par partenaire</p>

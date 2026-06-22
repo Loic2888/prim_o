@@ -45,8 +45,8 @@ export default function Navbar() {
 
   return (
     <header className="navbar" ref={headerRef}>
-      <Link to="/" className="navbar-brand" onClick={close}>
-        PRIM'O
+      <Link to="/" className="navbar-brand" onClick={close} style={{ display: 'flex', alignItems: 'baseline', gap: 2, textDecoration: 'none' }}>
+        <img src="/logo-primo.png" alt="prim'o" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
       </Link>
 
       {/* Hamburger — mobile only */}

@@ -9,9 +9,13 @@ import api from './api';
 import type { TokenTransaction, ApiResponse } from '../types';
 
 interface AllocatePayload {
-  receiver_id: string;
+  target_type: string;
+  receiver_id?: string | null;
+  target_team_id?: string | null;
+  excluded_user_ids?: string[];
   amount: number;
   reason?: string;
+  target_account?: 'personal' | 'team';
 }
 
 export const tokenService = {

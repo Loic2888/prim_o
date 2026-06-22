@@ -8,7 +8,7 @@ const employerService = require('../services/employer.service');
 /** Changes the role of an employee within the employer's company (promote to manager or demote to employee). */
 const changeRole = async (req, res, next) => {
   try {
-    const data = await employerService.changeRole(req.user, req.params.id, req.body.role);
+    const data = await employerService.changeRole(req.user, req.params.id, req.body.role, req.body.teamName);
     res.json({ success: true, data });
   } catch (err) {
     next(err);
@@ -55,4 +55,13 @@ const getManagerTeam = async (req, res, next) => {
   }
 };
 
-module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam };
+const listTeams = async (req, res, next) => {
+  try {
+    const data = await employerService.listTeams(req.user.company_id);
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { changeRole, createAllocation, listAllocations, updateAllocation, getManagerTeam, listTeams };

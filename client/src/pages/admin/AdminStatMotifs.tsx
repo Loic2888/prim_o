@@ -78,7 +78,7 @@ export default function AdminStatMotifs() {
           background-color: rgba(255, 255, 255, 0.15) !important;
         }
       `}</style>
-      <div className="page-header">
+      <div className="page-header page-header--clean">
         <div style={{ width: '100%', textAlign: 'center' }}>
           <h1>Statistiques motifs de don</h1>
           <p>{total} allocation{total !== 1 ? 's' : ''} analysée{total !== 1 ? 's' : ''}</p>

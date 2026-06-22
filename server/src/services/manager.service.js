@@ -138,15 +138,15 @@ const giveTokens = async (manager, { employee_id, amount }) => {
 
   const t = await sequelize.transaction();
   try {
-    const managerUser = await User.findByPk(manager.id, { lock: true, transaction: t });
-    if (!managerUser || managerUser.token_balance < amount) {
-      throw httpError('Insufficient token balance', 402);
+    const team = await Team.findOne({ where: { manager_id: manager.id, dissolved_at: null }, lock: true, transaction: t });
+    if (!team || team.token_balance < amount) {
+      throw httpError('Insufficient team token balance', 402);
     }
 
     const employee = await User.findByPk(employee_id, { lock: true, transaction: t });
     if (!employee) throw httpError('Employee not found', 404);
 
-    await managerUser.decrement('token_balance', { by: amount, transaction: t });
+    await team.decrement('token_balance', { by: amount, transaction: t });
     await employee.increment('token_balance', { by: amount, transaction: t });
 
     const tx = await TokenTransaction.create(
@@ -205,7 +205,8 @@ const getUnassignedCollaborators = async (manager) => {
 const getBalance = async (managerId) => {
   const user = await User.findByPk(managerId, { attributes: ['id', 'token_balance'] });
   if (!user) throw httpError('User not found', 404);
-  return { userId: user.id, token_balance: user.token_balance };
+  const team = await Team.findOne({ where: { manager_id: managerId, dissolved_at: null } });
+  return { userId: user.id, token_balance: user.token_balance, team_token_balance: team ? team.token_balance : 0 };
 };
 
 function computeNextRun(dayOfMonth, frequency, month) {
