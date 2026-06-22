@@ -1,6 +1,13 @@
+/**
+ * components/Layout.tsx — Application shell that wraps every authenticated page.
+ *
+ * Renders the desktop top navigation bar (TopNav), a mobile-only sticky header with the
+ * PRIM'O brand and the user's token balance, the page content, and the mobile bottom
+ * navigation bar (BottomNav). Employers see their company's token balance and an
+ * 'Acheter' shortcut; all other roles see their personal token balance.
+ */
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-
 import { useAuth } from '../context/AuthContext';
 import TopNav from './TopNav';
 import BottomNav from './BottomNav';
@@ -61,9 +68,9 @@ export default function Layout({ children }: Props) {
                 <span>{user.role === 'employer' ? (company?.token_balance ?? '…') : (user.token_balance ?? 0)}</span>
               </div>
             </div>
-          )}
-        </header>
-      )}
+          </div>
+        )}
+      </header>
 
       <main className={`app-main${isHeroPage ? ' app-main--hero' : ''}`}>{children}</main>
 

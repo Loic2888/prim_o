@@ -297,7 +297,7 @@ function ManagerPourToi() {
     } finally { setQuickGiving(false); }
   }
 
-  /* Add existing collaborator */
+  /* Add collaborator */
   async function handleAddExisting(e: React.FormEvent) {
     e.preventDefault();
     if (!addingId) return;
@@ -311,7 +311,6 @@ function ManagerPourToi() {
     } finally { setAddingLoad(false); }
   }
 
-  /* Create new collaborator */
   async function handleCreateCollaborator(e: React.FormEvent) {
     e.preventDefault();
     setCreateLoad(true); setCreateError('');
@@ -486,6 +485,7 @@ function ManagerPourToi() {
               Créer un profil
             </button>
           </div>
+        )}
 
           {addMode === 'existing' && (
             <form onSubmit={handleAddExisting}>
@@ -536,7 +536,7 @@ function ManagerPourToi() {
             </form>
           )}
         </div>
-      </div>
+      )}
 
       {/* ══ Distribution chart ══ */}
       {members.length > 1 && (
