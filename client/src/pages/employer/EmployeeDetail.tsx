@@ -45,6 +45,7 @@ export default function EmployeeDetail() {
   const [error, setError] = useState("");
   const [entryDate, setEntryDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   const [quickTarget, setQuickTarget] = useState<boolean>(false);
   const [quickAmount, setQuickAmount] = useState("");
@@ -121,13 +122,40 @@ export default function EmployeeDetail() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', gap: '16px' }}>
         <div className="card" style={{ padding: '16px 24px', margin: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>
             {employee.first_name} {employee.name}
           </h1>
-          <p style={{ color: 'var(--text-muted)', margin: 0, marginTop: '4px' }}>Employé</p>
+          <p style={{ color: 'var(--text-muted)', margin: 0, marginTop: '4px' }}>Collaborateur</p>
         </div>
+        <button
+          className="btn btn-outline back-btn"
+          style={{
+            borderColor: 'var(--primary)',
+            color: 'var(--primary)',
+            background: 'transparent',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            height: 'fit-content',
+            padding: '10px 18px',
+            borderRadius: '12px',
+            transition: 'all 0.2s ease',
+          }}
+          onClick={() => navigate('/employer/dashboard')}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 161, 154, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <IconArrowLeft />
+          Retour
+        </button>
       </div>
 
       {error && <p className="form-error">{error}</p>}
@@ -166,7 +194,7 @@ export default function EmployeeDetail() {
             { label: "Prénom", value: employee.first_name },
             { label: "Nom", value: employee.name },
             { label: "Email", value: employee.email },
-            { label: "Rôle", value: employee.role },
+            { label: "Rôle", value: employee.role === 'employee' ? 'Collaborateur' : employee.role },
           ].map(({ label, value }) => (
             <div key={label} className="info-field-card">
               <span className="info-field-label">{label}</span>
@@ -190,25 +218,37 @@ export default function EmployeeDetail() {
           style={{ width: 200 }}
         />
 
-        <button
-          className="btn btn-primary btn-sm"
-          style={{ marginTop: 10 }}
-          disabled={saving}
-          onClick={async () => {
-            try {
-              setSaving(true);
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ margin: 0 }}
+            disabled={saving}
+            onClick={async () => {
+              try {
+                setSaving(true);
+                setUpdateSuccess(false);
 
-              await userService.updateEntryDate(id!, entryDate);
+                await userService.updateEntryDate(id!, entryDate);
 
-              const updated = await userService.getById(id!);
-              setEmployee(updated);
-            } finally {
-              setSaving(false);
-            }
-          }}
-        >
-          {saving ? "Sauvegarde..." : "Mettre à jour"}
-        </button>
+                const updated = await userService.getById(id!);
+                setEmployee(updated);
+                setUpdateSuccess(true);
+                setTimeout(() => setUpdateSuccess(false), 3000);
+              } catch {
+                setError("Erreur lors de la mise à jour.");
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            {saving ? "Sauvegarde..." : "Mettre à jour"}
+          </button>
+          {updateSuccess && (
+            <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600 }}>
+              ✓ Date d'entrée mise à jour avec succès !
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Historique des transactions */}
@@ -411,7 +451,7 @@ export default function EmployeeDetail() {
                     Annuler
                   </button>
                   <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }} disabled={!quickAmount}>
-                    Envoyer
+                    Allouer
                   </button>
                 </div>
               </form>

@@ -51,7 +51,7 @@ export const managerService = {
     await api.post("/manager/team/members", { employee_id });
   },
 
-  async createEmployee(payload: { first_name: string; name: string; email: string; password: string }): Promise<User> {
+  async createEmployee(payload: { first_name: string; name: string; email: string; password: string; entry_date?: string }): Promise<User> {
     const { data } = await api.post<ApiResponse<User>>("/manager/employees", payload);
     return data.data;
   },
