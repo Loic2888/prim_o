@@ -199,7 +199,7 @@ export default function BottomNav() {
     ? [
         { label: 'Entreprises', icon: <IconBuilding />,  onClick: () => go('/admin/dashboard'), isActive: active('/admin/dashboard') },
         { label: 'Catalogue',   icon: <IconCatalogue />, onClick: () => go('/catalogue'),       isActive: active('/catalogue') },
-        { label: 'Statistique', icon: <IconDashboard />, onClick: () => go('/admin/stats'),     isActive: active('/admin/stats') },
+        { label: 'Statistiques', icon: <IconDashboard />, onClick: () => go('/admin/stats'),     isActive: active('/admin/stats') },
         { label: 'Bons',        icon: <IconTicket />,    onClick: () => go('/admin/bons'),      isActive: active('/admin/bons') },
       ]
     : [
@@ -258,7 +258,13 @@ export default function BottomNav() {
                 <div>
                   <p className="menu-sheet-name">{user.first_name || user.name}</p>
                   <p className="menu-sheet-email">{user.email}</p>
-                  <span className="menu-sheet-role">{user.role}</span>
+                  <span className="menu-sheet-role">
+                    {user.role === 'employee' ? 'collaborateur' :
+                     user.role === 'employer' ? 'employeur' :
+                     user.role === 'manager' ? 'manager' :
+                     user.role === 'admin' ? 'admin' :
+                     user.role}
+                  </span>
                 </div>
               </div>
             )}

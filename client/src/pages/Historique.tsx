@@ -41,6 +41,7 @@ export default function Historique() {
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
   const knownIds = useRef<Set<string>>(new Set());
   const isFirstFeed = useRef(true);
+  const [totalLastMonthTokens, setTotalLastMonthTokens] = useState<number>(0);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -69,8 +70,31 @@ export default function Historique() {
 
     const fetchFeed = async () => {
       try {
-        const data = await tokenService.getTransactions({ userId: user.id });
-        const latest = data.slice(0, 10);
+        const data = await tokenService.getTransactions();
+        const companyTx = Array.isArray(data) ? data.filter((tx) => tx && tx.company_id === user?.company_id) : [];
+        const latest = companyTx.slice(0, 10);
+
+        // Calculate last month's total tokens won
+        const now = new Date();
+        let prevMonth = now.getMonth() - 1;
+        let prevMonthYear = now.getFullYear();
+        if (prevMonth < 0) {
+          prevMonth = 11;
+          prevMonthYear = now.getFullYear() - 1;
+        }
+
+        const lastMonthAllocations = companyTx.filter((tx) => {
+          if (!tx) return false;
+          const txDate = new Date(tx.createdAt || tx.created_at || 0);
+          return (
+            txDate.getMonth() === prevMonth &&
+            txDate.getFullYear() === prevMonthYear
+          );
+        });
+
+        const sum = lastMonthAllocations.reduce((acc, tx) => acc + (tx.amount || 0), 0);
+        setTotalLastMonthTokens(sum);
+
         const incoming = latest.filter((tx) => !knownIds.current.has(tx.id));
         if (incoming.length === 0) return;
 
@@ -92,7 +116,7 @@ export default function Historique() {
     fetchFeed();
     const interval = setInterval(fetchFeed, 5000);
     return () => clearInterval(interval);
-  }, [user?.id, showFeed]);
+  }, [user?.id, showFeed, user?.company_id]);
 
   if (loading) return <div style={{ padding: 32, color: 'var(--text-muted)' }}>Chargement…</div>;
 
@@ -102,19 +126,21 @@ export default function Historique() {
   // Unified timeline for employees
   const employeeTimeline = !isManager
     ? [...transactions.map(t => ({ ...t, _kind: 'token' })), ...redemptions.map(r => ({ ...r, _kind: 'redemption' }))]
-        .sort((a, b) => {
-          const da = new Date(a._kind === 'token' ? a.created_at : a.redeemed_at).getTime();
-          const db = new Date(b._kind === 'token' ? b.created_at : b.redeemed_at).getTime();
+        .sort((a: any, b: any) => {
+          const da = new Date(a._kind === 'token' ? (a.createdAt || a.created_at) : (a.redeemed_at || a.createdAt || a.created_at)).getTime();
+          const db = new Date(b._kind === 'token' ? (b.createdAt || b.created_at) : (b.redeemed_at || b.createdAt || b.created_at)).getTime();
           return db - da;
         })
     : [];
 
   // Unified timeline for managers and employers
   const managerTimeline = isManager
-    ? [...companyTx.map(t => ({ ...t, _kind: 'token' })), ...companyOrders.map(r => ({ ...r, _kind: 'redemption' }))]
-        .sort((a, b) => {
-          const da = new Date(a._kind === 'token' ? a.created_at : a.redeemed_at).getTime();
-          const db = new Date(b._kind === 'token' ? b.created_at : b.redeemed_at).getTime();
+    ? companyTx
+        .filter(t => t && t.amount > 0)
+        .map(t => ({ ...t, _kind: 'token' }))
+        .sort((a: any, b: any) => {
+          const da = new Date(a.createdAt || a.created_at).getTime();
+          const db = new Date(b.createdAt || b.created_at).getTime();
           return db - da;
         })
     : [];
@@ -154,7 +180,7 @@ export default function Historique() {
                       <div key={`tx-${tx.id}`} style={{ paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
                         <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>{text}</p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
-                          {fmtDateTime(tx.created_at)}
+                          {fmtDateTime(tx.createdAt || tx.created_at)}
                         </p>
                       </div>
                     );
@@ -164,7 +190,7 @@ export default function Historique() {
                       <div>
                         <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>Tokens reçus <span className="token-badge" style={{ marginLeft: 6 }}>+{tx.amount}</span></p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Motif : {tx.reason || tx.type || '—'}</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(tx.created_at)}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(tx.createdAt || tx.created_at)}</p>
                       </div>
                     </div>
                   );
@@ -175,7 +201,7 @@ export default function Historique() {
                       <div>
                         <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>Achat de bon <span className="token-badge" style={{ background: '#fef2f2', color: '#991b1b', marginLeft: 6 }}>-{r.voucher?.token_cost ?? '?'}</span></p>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Offre : {r.voucher?.title || '—'} ({r.voucher?.partner || '—'})</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(r.redeemed_at)}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(r.createdAt || r.redeemed_at)}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <span className="promo-code" style={{ fontSize: '0.75rem' }}>{r.promo_code}</span>
@@ -190,62 +216,37 @@ export default function Historique() {
       )}
 
       {/* Unified Timeline (Manager/Employer) */}
-      {isManager && (
+    {isManager && (
         <div className="card" style={{ marginTop: 16 }}>
           {managerTimeline.length === 0 ? (
             <p className="empty-state">Aucun historique d'équipe disponible.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {managerTimeline.map((item) => {
-                if (item._kind === 'token') {
-                  const tx = item as TokenTransaction & { _kind: 'token' };
-                  if (tx.type === 'role_change') {
-                    const text = tx.reason === 'manager' 
-                      ? 'a été promu(e) au poste de Manager' 
-                      : 'a été rétrogradé(e) au poste de Collaborateur';
-                    const receiverName = tx.receiver?.first_name || tx.receiver?.name || 'Un collaborateur';
-                    return (
-                      <div key={`mtx-${tx.id}`} style={{ paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>{receiverName} {text}</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
-                          {fmtDateTime(tx.created_at)}
-                        </p>
-                      </div>
-                    );
-                  }
-                  let receiverName = tx.receiver?.first_name || tx.receiver?.name || 'Un collaborateur';
-                  if (tx.type === 'employer_to_team') {
-                    receiverName = `L'équipe de ${tx.receiver?.first_name} ${tx.receiver?.name}`;
-                  }
-                  const senderName = tx.sender?.first_name || tx.sender?.name || 'Système';
-                  return (
-                    <div key={`mtx-${tx.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                      <div>
-                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                          {receiverName} a reçu des tokens <span className="token-badge" style={{ marginLeft: 6 }}>+{tx.amount}</span>
-                        </p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Motif : {tx.reason || tx.type || '—'} (par {senderName})</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(tx.created_at)}</p>
-                      </div>
+                const tx = item as TokenTransaction;
+                const firstName = tx.receiver?.first_name || tx.receiver?.name || 'Un collaborateur';
+                const motif = tx.reason || tx.type || '—';
+                const amount = tx.amount;
+                const dateStr = fmtDateTime(tx.createdAt || tx.created_at);
+
+                return (
+                  <div key={`mtx-${tx.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+                    <div>
+                      <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        {firstName}
+                      </p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>
+                        Motif : {motif}
+                      </p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>
+                        {dateStr}
+                      </p>
                     </div>
-                  );
-                } else {
-                  const r = item as AdminRedemption & { _kind: 'redemption' };
-                  const buyerName = r.user?.first_name || r.user?.name || 'Un collaborateur';
-                  const offerName = r.voucher?.title || '—';
-                  const partnerName = r.voucher?.partner || '—';
-                  return (
-                    <div key={`mred-${r.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-                      <div>
-                        <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                          {buyerName} a acheté le bon "{offerName}" <span className="token-badge" style={{ background: '#fef2f2', color: '#991b1b', marginLeft: 6 }}>-{r.voucher?.token_cost ?? '?'}</span>
-                        </p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>Partenaire : {partnerName}</p>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 2 }}>{fmtDateTime(r.redeemed_at)}</p>
-                      </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span className="token-badge">+{amount} tokens</span>
                     </div>
-                  );
-                }
+                  </div>
+                );
               })}
             </div>
           )}
@@ -259,20 +260,47 @@ export default function Historique() {
             <span className="feed-title">Activité dans l'entreprise</span>
             <span className="feed-dot" />
           </div>
+
+          {new Date().getDate() === 1 && (
+            <div style={{
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              marginBottom: 16,
+              fontSize: '0.88rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              border: '1px solid rgba(240, 168, 0, 0.2)'
+            }}>
+              <span>🎉</span>
+              <span>
+                Le mois dernier, <strong>{totalLastMonthTokens}</strong> tokens ont été gagnés pour célébrer les réussites de l'équipe !
+              </span>
+            </div>
+          )}
+
           {feed.length === 0 ? (
             <p className="empty-state">Aucune activité pour le moment.</p>
           ) : (
             <ul className="feed-list">
               {feed.map((tx) => {
-                const name = tx.receiver?.first_name || tx.receiver?.name || 'Un collaborateur';
                 const isNew = newIds.has(tx.id);
                 return (
                   <li key={tx.id} className={`feed-item${isNew ? ' feed-item--new' : ''}`}>
-                    <span className="feed-avatar">{name.charAt(0).toUpperCase()}</span>
-                    <span className="feed-text">
-                      <strong>{name}</strong> a gagné <span className="token-badge feed-badge">+{tx.amount}</span> tokens !
+                    <span className="feed-avatar" style={{ background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img 
+                        src="/icons/token-logo-SF.png" 
+                        alt="Token" 
+                        style={{ width: '28px', height: '28px', objectFit: 'contain' }} 
+                      />
                     </span>
-                    <span className="feed-time">{fmt(tx.created_at)}</span>
+                    <span className="feed-text">
+                      <span className="token-badge feed-badge">+{tx.amount}</span> tokens gagnés pour : <strong>{tx.type || '—'}</strong>
+                    </span>
+                    <span className="feed-time">{fmt(tx.createdAt || tx.created_at)}</span>
                   </li>
                 );
               })}

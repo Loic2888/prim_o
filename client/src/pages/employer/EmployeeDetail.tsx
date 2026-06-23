@@ -148,6 +148,12 @@ export default function EmployeeDetail() {
             <span>+ Ajouter tokens</span>
           </div>
         </div>
+        <div className="stat-card">
+          <p className="stat-label">Membre depuis</p>
+          <p className="stat-value" style={{ fontSize: "1.1rem" }}>
+            {fmt(employee.createdAt || employee.created_at)}
+          </p>
+        </div>
       </div>
 
       {/* Informations */}
@@ -231,7 +237,7 @@ export default function EmployeeDetail() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {fmt(tx.created_at)}
+                      {fmt(tx.createdAt || tx.created_at)}
                     </td>
                     <td>
                       <span
@@ -278,8 +284,13 @@ export default function EmployeeDetail() {
           onClick={async () => {
             try {
               if (!id) return;
-              await managerService.promoteToManager(id);
-                      navigate(-1);
+              const teamName = window.prompt(
+                "Nom de l'équipe pour ce manager :",
+                `Équipe de ${employee?.first_name || ""} ${employee?.name || ""}`.trim() || "Nouvelle équipe"
+              );
+              if (!teamName || !teamName.trim()) return;
+              await managerService.promoteToManager(id, teamName.trim());
+              navigate(-1);
             } catch {
               alert("Erreur lors de la promotion.");
             }

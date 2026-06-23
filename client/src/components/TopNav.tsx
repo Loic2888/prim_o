@@ -49,7 +49,7 @@ export default function TopNav() {
     : (user?.token_balance ?? 0);
 
   return (
-    <header className={`top-nav ${isManager ? 'top-nav--manager' : ''} ${isManager && !isPourToi ? 'no-shadow' : ''}`}>
+    <header className={`top-nav ${isManager ? 'top-nav--manager' : ''} ${isManager && isPourToi ? 'top-nav--transparent' : ''} ${isManager && !isPourToi ? 'no-shadow' : ''}`}>
       <div className="top-nav-inner">
         {/* Brand */}
         <Link to={user?.role === 'employer' ? '/employer/dashboard' : user?.role === 'admin' ? '/admin/dashboard' : '/pour-toi'} className="top-nav-brand" style={{ display: 'flex', alignItems: 'baseline', gap: 2, textDecoration: 'none' }}>
@@ -60,9 +60,9 @@ export default function TopNav() {
         <nav className="top-nav-links">
           {isAdmin ? (
             <>
-              <NavLink to="/admin/dashboard" className={({ isActive }) => link(isActive)}>Entreprise</NavLink>
+              <NavLink to="/admin/dashboard" className={({ isActive }) => link(isActive)}>Entreprises</NavLink>
               <NavLink to="/catalogue"       className={({ isActive }) => link(isActive)}>Catalogue</NavLink>
-              <NavLink to="/admin/stats"     className={({ isActive }) => link(isActive)}>Statistique</NavLink>
+              <NavLink to="/admin/stats"     className={({ isActive }) => link(isActive)}>Statistiques</NavLink>
               <NavLink to="/admin/bons"      className={({ isActive }) => link(isActive)}>Bon</NavLink>
             </>
           ) : (
@@ -99,19 +99,16 @@ export default function TopNav() {
 
             {dropOpen && (
               <div className="top-nav-dropdown">
-                <div className="top-nav-drop-user" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {user && (
-                    <img
-                      src={getAvatarUrl(user.id)}
-                      alt={user.first_name}
-                      style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid var(--border)' }}
-                    />
-                  )}
-                  <div>
-                    <p className="top-nav-drop-name">{user?.first_name || user?.name}</p>
-                    <p className="top-nav-drop-email">{user?.email}</p>
-                    <span className="menu-sheet-role">{user?.role}</span>
-                  </div>
+                <div className="top-nav-drop-user">
+                  <p className="top-nav-drop-name">{user?.first_name || user?.name}</p>
+                  <p className="top-nav-drop-email">{user?.email}</p>
+                  <span className="menu-sheet-role">
+                    {user?.role === 'employee' ? 'collaborateur' :
+                     user?.role === 'employer' ? 'employeur' :
+                     user?.role === 'manager' ? 'manager' :
+                     user?.role === 'admin' ? 'admin' :
+                     user?.role}
+                  </span>
                 </div>
                 <div className="top-nav-drop-divider" />
                 {[
