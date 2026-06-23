@@ -238,6 +238,8 @@ function ManagerPourToi() {
   const [available, setAvailable]   = useState<User[]>([]);
   const [loading, setLoading]       = useState(true);
 
+  const [history, setHistory]       = useState<TokenTransaction[]>([]);
+
   /* Quick send per collaborator card */
   const [quickMember, setQuickMember]   = useState<User | null>(null);
   const [quickAmount, setQuickAmount]   = useState('');
@@ -252,7 +254,7 @@ function ManagerPourToi() {
   const [addingId, setAddingId]     = useState('');
   const [addingLoad, setAddingLoad] = useState(false);
   const [addError, setAddError]     = useState('');
-  const [createForm, setCreateForm] = useState({ first_name: '', name: '', email: '', password: '' });
+  const [createForm, setCreateForm] = useState({ first_name: '', name: '', email: '', password: '', entry_date: '' });
   const [createLoad, setCreateLoad] = useState(false);
   const [createError, setCreateError] = useState('');
 
@@ -266,18 +268,20 @@ function ManagerPourToi() {
   const members = (team?.members ?? []).map((m) => m.user).filter(Boolean) as User[];
 
   const fetchAll = useCallback(async () => {
-    const [teamRes, ordersRes, schedRes, availRes] = await Promise.allSettled([
+    const [teamRes, ordersRes, schedRes, availRes, historyRes] = await Promise.allSettled([
       managerService.getTeam(),
       marketplaceService.getOrders(),
       managerService.listScheduled(),
       managerService.getUnassignedCollaborators(),
+      user?.id ? userService.getHistory(user.id) : Promise.resolve([]),
     ]);
     if (teamRes.status === 'fulfilled')   setTeam(teamRes.value);
     if (ordersRes.status === 'fulfilled') setOrders(ordersRes.value);
     if (schedRes.status === 'fulfilled')  setSchedRules(schedRes.value);
     if (availRes.status === 'fulfilled')  setAvailable(availRes.value);
+    if (historyRes.status === 'fulfilled') setHistory(historyRes.value);
     setLoading(false);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -316,7 +320,7 @@ function ManagerPourToi() {
     setCreateLoad(true); setCreateError('');
     try {
       await managerService.createEmployee(createForm);
-      setCreateForm({ first_name: '', name: '', email: '', password: '' });
+      setCreateForm({ first_name: '', name: '', email: '', password: '', entry_date: '' });
       setAddMode('none');
       await fetchAll();
     } catch (err: any) {
@@ -463,7 +467,7 @@ function ManagerPourToi() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <span style={{ fontWeight: 800, color: '#f0a800', fontSize: '0.9rem' }}>{m.token_balance} tkn</span>
-                  <button className="manager-collab-btn" onClick={(e) => { e.stopPropagation(); setQuickMember(m); setQuickAmount(''); setQuickReason(''); setQuickError(''); setQuickSuccess(''); }}>+ Envoyer</button>
+                  <button className="manager-collab-btn" onClick={(e) => { e.stopPropagation(); setQuickMember(m); setQuickAmount(''); setQuickReason(''); setQuickError(''); setQuickSuccess(''); }}>Allouer</button>
                 </div>
               </div>
             ))}
@@ -528,6 +532,15 @@ function ManagerPourToi() {
                 value={createForm.password}
                 onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                 required style={{ marginBottom: 12 }} />
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600 }}>
+                  Date d'entrée dans l'entreprise (optionnel)
+                </label>
+                <input className="form-input" type="date"
+                  value={createForm.entry_date}
+                  onChange={(e) => setCreateForm({ ...createForm, entry_date: e.target.value })}
+                />
+              </div>
               {createError && <p className="form-error">{createError}</p>}
               <button type="submit" className="btn btn-primary btn-sm" disabled={createLoad}>
                 {createLoad ? 'Création…' : "Créer et ajouter à l'équipe"}
@@ -537,13 +550,45 @@ function ManagerPourToi() {
         </div>
       </div>
 
-      {/* ══ Distribution chart ══ */}
-      {members.length > 1 && (
-        <div className="card" style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: 16 }}>Distribution tokens</h2>
-          <TeamBarChart members={members} />
-        </div>
-      )}
+      {/* ══ Distribution des tokens ══ */}
+      <div className="card" style={{ marginBottom: 28 }}>
+        <h2 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 16 }}>Distribution des tokens</h2>
+        {(() => {
+          const distributions = history
+            .filter(tx => tx.sender_id === user?.id && tx.receiver_id !== user?.id)
+            .sort((a, b) => new Date(b.createdAt || b.created_at || 0).getTime() - new Date(a.createdAt || a.created_at || 0).getTime());
+
+          if (distributions.length === 0) {
+            return <p className="empty-state">Aucune distribution effectuée pour le moment.</p>;
+          }
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {distributions.map((tx) => {
+                const name = tx.receiver?.first_name || members.find(m => m.id === tx.receiver_id)?.first_name || 'Collaborateur';
+                return (
+                  <div key={tx.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1, paddingRight: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{name}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--border)', padding: '2px 8px', borderRadius: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }} title={tx.reason}>
+                          {tx.reason || 'sans motif'}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {fmtShort(tx.createdAt || tx.created_at)}
+                      </span>
+                    </div>
+                    <span className="token-badge" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontWeight: 700, fontSize: '0.88rem' }}>
+                      +{tx.amount}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>
 
       {/* ══ Attributions automatiques ══ */}
       <div className="card" style={{ marginBottom: 24 }}>
@@ -679,7 +724,7 @@ function ManagerPourToi() {
                     Annuler
                   </button>
                   <button type="submit" className="btn btn-primary" disabled={quickGiving || !quickAmount}>
-                    {quickGiving ? 'Envoi…' : 'Envoyer'}
+                    {quickGiving ? 'Allocation…' : 'Allouer'}
                   </button>
                 </div>
               </form>

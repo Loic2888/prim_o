@@ -14,7 +14,8 @@ import { useAuth } from '../context/AuthContext';
 import { userService } from '../services/user.service';
 import { marketplaceService } from '../services/marketplace.service';
 import { tokenService } from '../services/token.service';
-import type { TokenTransaction, Redemption, AdminRedemption } from '../types';
+import { companyService } from '../services/company.service';
+import type { TokenTransaction, Redemption, AdminRedemption, Team } from '../types';
 import { fmtShort as fmt, fmtDateTime } from '../utils/date';
 
 type Tab = 'tokens' | 'achats' | 'depenses';
@@ -33,6 +34,7 @@ export default function Historique() {
   // Employer/Manager-specific states
   const [companyTx, setCompanyTx] = useState<TokenTransaction[]>([]); 
   const [companyOrders, setCompanyOrders] = useState<AdminRedemption[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   
   const [loading, setLoading] = useState(true);
   
@@ -58,6 +60,9 @@ export default function Historique() {
     if (isManager) {
       tasks.push(tokenService.getTransactions().then(setCompanyTx).catch(() => {}));
       tasks.push(marketplaceService.getCompanyOrders().then(setCompanyOrders).catch(() => {}));
+      if (user.role === 'employer') {
+        tasks.push(companyService.getTeams().then(setTeams).catch(() => {}));
+      }
     }
 
     Promise.all(tasks).finally(() => setLoading(false));
@@ -117,6 +122,16 @@ export default function Historique() {
     const interval = setInterval(fetchFeed, 5000);
     return () => clearInterval(interval);
   }, [user?.id, showFeed, user?.company_id]);
+
+  const getReceiverManagerName = (receiverId: string | null) => {
+    if (!receiverId || !teams.length) return '';
+    const team = teams.find(t => t.members?.some(m => m.user_id === receiverId));
+    if (team && (team as any).manager) {
+      const mgr = (team as any).manager;
+      return `${mgr.first_name} ${mgr.name}`;
+    }
+    return '';
+  };
 
   if (loading) return <div style={{ padding: 32, color: 'var(--text-muted)' }}>Chargement…</div>;
 
@@ -216,7 +231,7 @@ export default function Historique() {
       )}
 
       {/* Unified Timeline (Manager/Employer) */}
-    {isManager && (
+      {isManager && (
         <div className="card" style={{ marginTop: 16 }}>
           {managerTimeline.length === 0 ? (
             <p className="empty-state">Aucun historique d'équipe disponible.</p>
@@ -228,12 +243,18 @@ export default function Historique() {
                 const motif = tx.reason || tx.type || '—';
                 const amount = tx.amount;
                 const dateStr = fmtDateTime(tx.createdAt || tx.created_at);
+                const managerName = getReceiverManagerName(tx.receiver_id);
 
                 return (
                   <div key={`mtx-${tx.id}`} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
                     <div>
                       <p style={{ fontWeight: 600, fontSize: '0.85rem' }}>
                         {firstName}
+                        {user?.role === 'employer' && managerName && (
+                          <span style={{ fontWeight: 400, color: 'var(--text-muted)', marginLeft: 6 }}>
+                            (équipe de {managerName})
+                          </span>
+                        )}
                       </p>
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>
                         Motif : {motif}
@@ -298,7 +319,10 @@ export default function Historique() {
                       />
                     </span>
                     <span className="feed-text">
-                      <span className="token-badge feed-badge">+{tx.amount}</span> tokens gagnés pour : <strong>{tx.type || '—'}</strong>
+                      <span className="token-badge feed-badge">+{tx.amount}</span> tokens gagnés
+                      {tx.reason && (
+                        <> pour : <strong>{tx.reason}</strong></>
+                      )}
                     </span>
                     <span className="feed-time">{fmt(tx.createdAt || tx.created_at)}</span>
                   </li>

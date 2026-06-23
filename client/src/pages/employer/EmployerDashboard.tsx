@@ -384,6 +384,7 @@ export default function EmployerDashboard() {
                   <tr>
                     <th style={{ padding: "7px 10px" }}>Nom</th>
                     <th style={{ padding: "7px 10px" }}>Rôle</th>
+                    <th style={{ padding: "7px 10px" }}>Date d'entrée</th>
                     <th style={{ padding: "7px 10px", textAlign: "right" }}>Tokens</th>
                   </tr>
                 </thead>
@@ -399,6 +400,9 @@ export default function EmployerDashboard() {
                       </td>
                       <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>
                         {mgr.role ? (mgr.role === 'employee' ? 'Collaborateur' : mgr.role === 'employer' ? 'Employeur' : mgr.role.charAt(0).toUpperCase() + mgr.role.slice(1)) : '—'}
+                      </td>
+                      <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>
+                        {fmtShort(mgr.entry_date)}
                       </td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>
                         <span className="token-badge">{mgr.token_balance}</span>
@@ -419,6 +423,7 @@ export default function EmployerDashboard() {
                   <tr>
                     <th style={{ padding: "7px 10px" }}>Nom</th>
                     <th style={{ padding: "7px 10px" }}>Équipe</th>
+                    <th style={{ padding: "7px 10px" }}>Date d'entrée</th>
                     <th style={{ padding: "7px 10px", textAlign: "right" }}>Tokens</th>
                   </tr>
                 </thead>
@@ -438,6 +443,9 @@ export default function EmployerDashboard() {
                           const team = teams.find(t => t.members?.some(m => m.user_id === emp.id)) as any;
                           return team?.manager ? `${team.manager.first_name} ${team.manager.name}` : "—";
                         })()}
+                      </td>
+                      <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>
+                        {fmtShort(emp.entry_date)}
                       </td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>
                         <span className="token-badge">{emp.token_balance}</span>

@@ -54,7 +54,7 @@ const getTeam = async (managerId) => {
  * Throws 409 if the email is already taken, 404 if the manager has no active team.
  * Returns the created employee object without the password hash.
  */
-const createEmployee = async (manager, { email, first_name, name, password }) => {
+const createEmployee = async (manager, { email, first_name, name, password, entry_date }) => {
   const existing = await User.findOne({ where: { email } });
   if (existing) throw httpError('Email already in use', 409);
 
@@ -77,6 +77,7 @@ const createEmployee = async (manager, { email, first_name, name, password }) =>
         company_id: manager.company_id,
         token_balance: 0,
         status: 'active',
+        entry_date: entry_date || null,
       },
       { transaction: t }
     );
@@ -131,7 +132,7 @@ const addTeamMember = async (manager, { employee_id }) => {
  * Throws 404 if the employee does not exist. The balance change and transaction record are
  * committed atomically with row-level locks. Returns the created TokenTransaction record.
  */
-const giveTokens = async (manager, { employee_id, amount }) => {
+const giveTokens = async (manager, { employee_id, amount, reason }) => {
   if (!Number.isInteger(amount) || amount <= 0) {
     throw httpError('amount must be a positive integer', 400);
   }
@@ -156,6 +157,7 @@ const giveTokens = async (manager, { employee_id, amount }) => {
         company_id: manager.company_id,
         amount,
         type: 'manager_to_employee',
+        reason: reason || null,
       },
       { transaction: t }
     );

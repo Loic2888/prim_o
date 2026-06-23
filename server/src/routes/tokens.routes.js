@@ -24,7 +24,7 @@ router.post(
   verifyToken,
   roleGuard('employer'),
   [
-    body('receiver_id').isUUID().withMessage('receiver_id must be a valid UUID'),
+    body('receiver_id').optional({ nullable: true }).isUUID().withMessage('receiver_id must be a valid UUID'),
     body('amount').isInt({ min: 1 }).withMessage('amount must be a positive integer'),
     body('reason').optional().isString().trim().withMessage('reason must be a string'),
     validate,

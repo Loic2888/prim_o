@@ -198,7 +198,7 @@ export default function TransferForm({ employees, teams, onSuccess }: Props) {
       const count = (res as any).count || 1;
       const total = (res as any).total || pending.amount;
       
-      setSuccess(`${total} tokens alloués (${count} destinataires).`);
+      setSuccess(`${total} tokens alloués (${count} destinataire${count > 1 ? 's' : ''}).`);
       setReceiverId(null);
       setTargetTeamId(null);
       setExcludedUserIds([]);

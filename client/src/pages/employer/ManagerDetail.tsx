@@ -48,6 +48,9 @@ export default function ManagerDetail() {
   const [quickReason, setQuickReason] = useState("");
   const [quickSuccess, setQuickSuccess] = useState("");
   const [quickError, setQuickError] = useState("");
+  const [entryDate, setEntryDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -59,6 +62,7 @@ export default function ManagerDetail() {
         setManager(teamData.manager);
         setTeam(teamData.team);
         setHistory(hist);
+        setEntryDate(teamData.manager.entry_date || "");
       })
       .catch(() => setError("Impossible de charger les données."))
       .finally(() => setLoading(false));
@@ -129,13 +133,40 @@ export default function ManagerDetail() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', gap: '16px' }}>
         <div className="card" style={{ padding: '16px 24px', margin: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0 }}>
             {manager.first_name} {manager.name}
           </h1>
           <p style={{ color: 'var(--text-muted)', margin: 0, marginTop: '4px' }}>Manager</p>
         </div>
+        <button
+          className="btn btn-outline back-btn"
+          style={{
+            borderColor: 'var(--primary)',
+            color: 'var(--primary)',
+            background: 'transparent',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            height: 'fit-content',
+            padding: '10px 18px',
+            borderRadius: '12px',
+            transition: 'all 0.2s ease',
+          }}
+          onClick={() => navigate('/employer/dashboard')}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(0, 161, 154, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <IconArrowLeft />
+          Retour
+        </button>
       </div>
 
       {error && <p className="form-error">{error}</p>}
@@ -187,6 +218,54 @@ export default function ManagerDetail() {
               <span className="info-field-value">{value}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Date d'entrée */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>
+          Date d'entrée
+        </h2>
+
+        <input
+          type="date"
+          value={entryDate}
+          onChange={(e) => setEntryDate(e.target.value)}
+          className="form-input"
+          style={{ width: 200 }}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ margin: 0 }}
+            disabled={saving}
+            onClick={async () => {
+              try {
+                setSaving(true);
+                setUpdateSuccess(false);
+
+                await userService.updateEntryDate(id!, entryDate);
+
+                const teamData = await managerService.getManagerTeam(id!);
+                setManager(teamData.manager);
+                setTeam(teamData.team);
+                setUpdateSuccess(true);
+                setTimeout(() => setUpdateSuccess(false), 3000);
+              } catch {
+                setError("Erreur lors de la mise à jour.");
+              } finally {
+                setSaving(false);
+              }
+            }}
+          >
+            {saving ? "Sauvegarde..." : "Mettre à jour"}
+          </button>
+          {updateSuccess && (
+            <span style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600 }}>
+              ✓ Date d'entrée mise à jour avec succès !
+            </span>
+          )}
         </div>
       </div>
 
@@ -378,7 +457,7 @@ export default function ManagerDetail() {
                     Annuler
                   </button>
                   <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }} disabled={!quickAmount}>
-                    Envoyer
+                    Allouer
                   </button>
                 </div>
               </form>

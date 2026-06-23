@@ -35,6 +35,7 @@ router.post(
     body('first_name').trim().notEmpty().withMessage('first_name is required'),
     body('name').trim().notEmpty().withMessage('name is required'),
     body('password').isLength({ min: 8 }).withMessage('password must be at least 8 characters'),
+    body('entry_date').optional({ nullable: true }).isISO8601().withMessage('entry_date must be a valid ISO 8601 date'),
     validate,
   ],
   managerController.createEmployee
@@ -54,6 +55,7 @@ router.post(
   [
     body('employee_id').isUUID().withMessage('employee_id must be a valid UUID'),
     body('amount').isInt({ min: 1 }).withMessage('amount must be a positive integer'),
+    body('reason').optional().isString().trim().withMessage('reason must be a string'),
     validate,
   ],
   requireTeamScope,
