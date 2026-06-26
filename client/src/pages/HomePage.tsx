@@ -34,18 +34,11 @@ export default function HomePage() {
       }}
     >
       <div style={{ maxWidth: 600 }}>
-        <div
-          style={{
-            fontSize: '2.8rem',
-            fontWeight: 800,
-            color: '#00a19a',
-            marginBottom: 20,
-            letterSpacing: '-0.04em',
-            fontFamily: "'Poppins', sans-serif",
-          }}
-        >
-          PRIM'O
-        </div>
+        <img
+          src="/logo-primo.png"
+          alt="prim'o"
+          style={{ height: 80, width: 'auto', objectFit: 'contain', marginBottom: 20 }}
+        />
 
         <h1
           style={{
