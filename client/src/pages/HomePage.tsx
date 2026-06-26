@@ -34,11 +34,10 @@ export default function HomePage() {
       }}
     >
       <div style={{ maxWidth: 600 }}>
-        <img
-          src="/logo-primo.png"
-          alt="prim'o"
-          style={{ height: 80, width: 'auto', objectFit: 'contain', marginBottom: 20 }}
-        />
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 2, marginBottom: 20 }}>
+          <span style={{ fontFamily: "'Pacifico', cursive", fontWeight: 400, fontSize: '3.2rem', color: 'var(--text)', letterSpacing: '0.5px' }}>prim'</span>
+          <span style={{ fontFamily: "'Pacifico', cursive", fontWeight: 400, fontSize: '4.5rem', color: 'var(--primary)', lineHeight: 1 }}>o</span>
+        </div>
 
         <h1
           style={{
