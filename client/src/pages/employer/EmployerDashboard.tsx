@@ -106,7 +106,7 @@ export default function EmployerDashboard() {
         userService.getAll({ companyId: user.company_id, role: "employee" }),
         companyService.getById(user.company_id),
         userService.getPending(user.company_id),
-        scheduledService.list(),
+        scheduledService.list().catch(() => []),
         userService.getAll({ companyId: user.company_id, role: "manager" }),
         companyService.getTeams(),
         marketplaceService.getOrders().catch(() => []),
