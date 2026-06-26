@@ -228,7 +228,7 @@ export default function TransferForm({ employees, teams, onSuccess }: Props) {
         />
       )}
 
-      <div className="card">
+      <div className="card" style={{ background: '#f0fdf4', borderColor: '#bbf7d0' }}>
         <h2 style={{ marginBottom: 20, fontSize: "1rem", fontWeight: 600 }}>
           Allouer des tokens
         </h2>

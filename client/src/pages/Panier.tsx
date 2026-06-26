@@ -118,7 +118,7 @@ export default function Panier() {
       )}
 
       {cartVouchers.length === 0 ? (
-        <div className="card">
+        <div className="card" style={{ background: '#fefce8', borderColor: '#fef08a' }}>
           <p className="empty-state">
             Votre panier est vide.
             <br />
@@ -128,7 +128,7 @@ export default function Panier() {
           </p>
         </div>
       ) : (
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, background: '#fefce8', borderColor: '#fef08a' }}>
           {cartVouchers.map((v) => (
             <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>

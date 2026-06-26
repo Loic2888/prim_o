@@ -129,8 +129,8 @@ export default function Catalogue() {
   const [promoCodes, setPromoCodes] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
-  type SortOption = 'populaires' | 'recent' | 'prix-croissant' | 'prix-decroissant';
-  const [sortBy, setSortBy] = useState<SortOption>('populaires');
+  type SortOption = 'recent' | 'prix-croissant' | 'prix-decroissant';
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   
   const { isFavorite, toggle } = useFavorites();
@@ -254,14 +254,6 @@ export default function Catalogue() {
     const baseItems = showSearch ? filtered : safeVouchers.filter((v) => v.available);
 
     return [...baseItems].sort((a, b) => {
-      if (sortBy === 'populaires') {
-        const heartsA = a.favorite_count ?? 0;
-        const heartsB = b.favorite_count ?? 0;
-        if (heartsB !== heartsA) return heartsB - heartsA;
-        const timeB = new Date(b.createdAt || b.created_at || 0).getTime();
-        const timeA = new Date(a.createdAt || a.created_at || 0).getTime();
-        return timeB - timeA;
-      }
       if (sortBy === 'recent') {
         const timeB = new Date(b.createdAt || b.created_at || 0).getTime();
         const timeA = new Date(a.createdAt || a.created_at || 0).getTime();
@@ -337,7 +329,6 @@ export default function Catalogue() {
             onClick={() => setShowSortDropdown(!showSortDropdown)}
           >
             <span>
-              {sortBy === 'populaires' && 'Trier par : Populaires'}
               {sortBy === 'recent' && 'Trier par : Nouveautés'}
               {sortBy === 'prix-croissant' && 'Trier par : Du moins cher au plus cher'}
               {sortBy === 'prix-decroissant' && 'Trier par : Du plus cher au moins cher'}
@@ -365,7 +356,6 @@ export default function Catalogue() {
           {showSortDropdown && (
             <ul className="sort-dropdown-list">
               {[
-                { value: 'populaires', label: 'Trier par : Populaires' },
                 { value: 'recent', label: 'Trier par : Nouveautés' },
                 { value: 'prix-croissant', label: 'Trier par : Du moins cher au plus cher' },
                 { value: 'prix-decroissant', label: 'Trier par : Du plus cher au moins cher' }
@@ -420,6 +410,29 @@ export default function Catalogue() {
         <p className="empty-state">Aucun bon trouvé.</p>
       ) : (
         <>
+          <div style={{ position: 'relative' }}>
+          {page > 1 && (
+            <button
+              className="carousel-side-arrow carousel-side-arrow--left"
+              onClick={() => scrollToPage(page - 1)}
+              aria-label="Page précédente"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
+          {page < totalPages && (
+            <button
+              className="carousel-side-arrow carousel-side-arrow--right"
+              onClick={() => scrollToPage(page + 1)}
+              aria-label="Page suivante"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          )}
           <div className="pages-carousel" ref={carouselRef} onScroll={handleScroll}>
             {pages.map((pageVouchers, index) => {
               const pageNum = index + 1;
@@ -451,6 +464,7 @@ export default function Catalogue() {
                 </div>
               );
             })}
+          </div>
           </div>
 
           {totalPages > 1 && (

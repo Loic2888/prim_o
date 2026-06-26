@@ -146,24 +146,11 @@ export default function Abonnement() {
 
   return (
     <div>
-      <style>{`
-        .page-header .back-btn {
-          position: absolute !important;
-          right: 24px !important;
-          top: 50% !important;
-          transform: translateY(-50%) !important;
-        }
-        @media (min-width: 768px) { .page-header .back-btn { right: 32px !important; } }
-        @media (min-width: 1024px) { .page-header .back-btn { right: 40px !important; } }
-      `}</style>
-
-      <div className="page-header">
-        <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Abonnement<br />tokens</h1>
-        </div>
-        <button className="back-btn" onClick={() => navigate(-1)}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 28px' }}>
+        <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>Abonnez-vous</h1>
+        <button className="btn btn-outline btn-sm" onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-            strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
+            strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14 }}>
             <polyline points="15 18 9 12 15 6" />
           </svg>
           Retour

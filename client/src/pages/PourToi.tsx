@@ -258,6 +258,7 @@ function ManagerPourToi() {
   const [quickSuccess, setQuickSuccess] = useState('');
 
   /* Add collaborator panel */
+  const [showAddModal, setShowAddModal] = useState(false);
   const [addMode, setAddMode]       = useState<'none'|'existing'|'create'>('none');
   const [addingId, setAddingId]     = useState('');
   const [addingLoad, setAddingLoad] = useState(false);
@@ -293,6 +294,13 @@ function ManagerPourToi() {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
+  /* Lock body scroll when any modal is open */
+  useEffect(() => {
+    const anyOpen = showAddModal || !!quickMember || showSchedModal;
+    document.body.style.overflow = anyOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [showAddModal, quickMember, showSchedModal]);
+
   /* Quick send */
   async function handleQuickSend(e: React.FormEvent) {
     e.preventDefault();
@@ -310,13 +318,13 @@ function ManagerPourToi() {
   }
 
   /* Add collaborator */
-  async function handleAddExisting(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleAddExisting(e?: React.FormEvent) {
+    e?.preventDefault();
     if (!addingId) return;
     setAddingLoad(true); setAddError('');
     try {
       await managerService.addTeamMember(addingId);
-      setAddingId(''); setAddMode('none');
+      setAddingId(''); setAddMode('none'); setShowAddModal(false);
       await fetchAll();
     } catch (err: any) {
       setAddError(err?.response?.data?.error ?? "Erreur lors de l'ajout.");
@@ -480,14 +488,6 @@ function ManagerPourToi() {
                   </div>
                 </div>
                 
-                {/* Date d'entrée */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0, paddingLeft: 8 }}>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginBottom: 2 }}>Date d'entrée</p>
-                  <p style={{ fontWeight: 600, fontSize: '0.82rem', color: 'var(--text)' }}>
-                    {m.entry_date ? fmtShort(m.entry_date) : '—'}
-                  </p>
-                </div>
-
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flex: 1, minWidth: 0 }}>
                   <span style={{ fontWeight: 800, color: '#f0a800', fontSize: '0.9rem' }}>{m.token_balance} tkn</span>
                   <button className="manager-collab-btn" onClick={(e) => { e.stopPropagation(); setQuickMember(m); setQuickAmount(''); setQuickReason(''); setQuickError(''); setQuickSuccess(''); }}>Allouer</button>
@@ -497,84 +497,122 @@ function ManagerPourToi() {
           </div>
         )}
 
-        {/* Add Panel (Window below collaborators) */}
-        <div style={{ padding: '20px', background: 'var(--bg)', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-          <p style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 16 }}>Ajouter à l'équipe</p>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <button type="button"
-              onClick={() => { setAddMode('existing'); setAddError(''); setCreateError(''); }}
-              className={addMode === 'existing' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}>
-              Depuis la liste
-            </button>
-            <button type="button"
-              onClick={() => { setAddMode('create'); setAddError(''); setCreateError(''); }}
-              className={addMode === 'create' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}>
-              Créer un profil
-            </button>
-          </div>
+        {/* Bouton pour ouvrir le modal */}
+        <button
+          className="btn btn-outline btn-sm"
+          style={{ width: '100%', marginTop: 4 }}
+          onClick={() => { setShowAddModal(true); setAddMode('existing'); setAddError(''); setCreateError(''); }}
+        >
+          + Ajouter à l'équipe
+        </button>
 
-          {addMode === 'existing' && (
-            <form onSubmit={handleAddExisting}>
-              {available.length === 0 ? (
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                  Aucun collaborateur disponible sans équipe.
-                </p>
-              ) : (
-                <>
-                  <select className="form-select" value={addingId}
-                    onChange={(e) => setAddingId(e.target.value)} required style={{ marginBottom: 12 }}>
-                    <option value="">Sélectionner un collaborateur…</option>
-                    {available.map((u) => (
-                      <option key={u.id} value={u.id}>{u.first_name} {u.name} — {u.email}</option>
-                    ))}
-                  </select>
-                  {addError && <p className="form-error">{addError}</p>}
-                  <button type="submit" className="btn btn-primary btn-sm" disabled={addingLoad || !addingId}>
-                    {addingLoad ? 'Ajout…' : "Ajouter à l'équipe"}
-                  </button>
-                </>
+        {/* Modal Ajouter à l'équipe */}
+        {showAddModal && (
+          <div className="emp-modal-overlay" onClick={() => setShowAddModal(false)}>
+            <div className="emp-modal" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '85vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <p style={{ fontWeight: 700, fontSize: '1.1rem' }}>Ajouter à l'équipe</p>
+                <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)', lineHeight: 1 }}>×</button>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                <button type="button"
+                  onClick={() => { setAddMode('existing'); setAddError(''); setCreateError(''); }}
+                  className={addMode === 'existing' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}>
+                  Depuis la liste
+                </button>
+                <button type="button"
+                  onClick={() => { setAddMode('create'); setAddError(''); setCreateError(''); }}
+                  className={addMode === 'create' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm'}>
+                  Créer un profil
+                </button>
+              </div>
+
+              {addMode === 'existing' && (
+                <div>
+                  {available.length === 0 ? (
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                      Aucun collaborateur disponible sans équipe.
+                    </p>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16, maxHeight: 260, overflowY: 'auto' }}>
+                        {available.map((u) => (
+                          <div
+                            key={u.id}
+                            onClick={() => setAddingId(String(u.id))}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 10,
+                              padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
+                              border: `1.5px solid ${String(addingId) === String(u.id) ? 'var(--primary)' : 'var(--border)'}`,
+                              background: String(addingId) === String(u.id) ? 'rgba(0,161,154,0.07)' : 'var(--bg)',
+                              transition: 'all 0.15s',
+                            }}
+                          >
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--border)' }}>
+                              <img src={`/assets/av_${resolveAvatarIndex(u)}.png`} alt={u.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <p style={{ fontWeight: 600, fontSize: '0.88rem', margin: 0 }}>{u.first_name} {u.name}</p>
+                              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {addError && <p className="form-error">{addError}</p>}
+                      <button
+                        className="btn btn-primary btn-sm"
+                        disabled={addingLoad || !addingId}
+                        style={{ width: '100%' }}
+                        onClick={handleAddExisting}
+                      >
+                        {addingLoad ? 'Ajout…' : "Ajouter à l'équipe"}
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
-            </form>
-          )}
 
-          {addMode === 'create' && (
-            <form onSubmit={handleCreateCollaborator}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-                <input className="form-input" type="text" placeholder="Prénom"
-                  value={createForm.first_name}
-                  onChange={(e) => setCreateForm({ ...createForm, first_name: e.target.value })} required />
-                <input className="form-input" type="text" placeholder="Nom"
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} required />
-              </div>
-              <input className="form-input" type="email" placeholder="Email"
-                value={createForm.email}
-                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                required style={{ marginBottom: 12 }} />
-              <input className="form-input" type="password" placeholder="Mot de passe (min. 8 car.)"
-                value={createForm.password}
-                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                required style={{ marginBottom: 12 }} />
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600 }}>
-                  Date d'entrée dans l'entreprise (optionnel)
-                </label>
-                <input className="form-input" type="date"
-                  value={createForm.entry_date}
-                  onChange={(e) => setCreateForm({ ...createForm, entry_date: e.target.value })}
-                />
-              </div>
-              {createError && <p className="form-error">{createError}</p>}
-              <button type="submit" className="btn btn-primary btn-sm" disabled={createLoad}>
-                {createLoad ? 'Création…' : "Créer et ajouter à l'équipe"}
-              </button>
-            </form>
-          )}
-        </div>
+              {addMode === 'create' && (
+                <form onSubmit={handleCreateCollaborator}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                    <input className="form-input" type="text" placeholder="Prénom"
+                      value={createForm.first_name}
+                      onChange={(e) => setCreateForm({ ...createForm, first_name: e.target.value })} required />
+                    <input className="form-input" type="text" placeholder="Nom"
+                      value={createForm.name}
+                      onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} required />
+                  </div>
+                  <input className="form-input" type="email" placeholder="Email"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                    required style={{ marginBottom: 12 }} />
+                  <input className="form-input" type="password" placeholder="Mot de passe (min. 8 car.)"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                    required style={{ marginBottom: 12 }} />
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600 }}>
+                      Date d'entrée dans l'entreprise (optionnel)
+                    </label>
+                    <input className="form-input" type="date"
+                      value={createForm.entry_date}
+                      onChange={(e) => setCreateForm({ ...createForm, entry_date: e.target.value })}
+                    />
+                  </div>
+                  {createError && <p className="form-error">{createError}</p>}
+                  <button type="submit" className="btn btn-primary btn-sm" disabled={createLoad} style={{ width: '100%' }}>
+                    {createLoad ? 'Création…' : "Créer et ajouter à l'équipe"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ══ Attributions automatiques ══ */}
-      <div className="card" style={{ marginBottom: 24 }}>
+      <div className="card" style={{ marginBottom: 24, background: '#f0fdf4', borderColor: '#bbf7d0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: schedRules.length > 0 ? 16 : 0 }}>
           <div>
             <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>Attributions automatiques</p>
@@ -624,11 +662,11 @@ function ManagerPourToi() {
       <div style={{ marginBottom: 28 }}>
         <h2 className="carousel-title" style={{ marginBottom: 12 }}>Mes bons d'achat</h2>
         {orders.length === 0 ? (
-          <div className="card"><p className="empty-state">Tu n'as pas encore racheté de bon.</p></div>
+          <div className="card" style={{ background: '#fefce8', borderColor: '#fef08a' }}><p className="empty-state">Tu n'as pas encore racheté de bon.</p></div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {orders.map((order) => (
-              <div key={order.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px' }}>
+              <div key={order.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#fefce8', borderColor: '#fef08a' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 2 }}>{order.voucher?.partner ?? '—'}</p>
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{order.voucher?.title ?? '—'}</p>
@@ -833,7 +871,12 @@ function ManagerPourToi() {
    PAGE SWITCH
 ════════════════════════════════════════════════════════════ */
 export default function PourToi() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+
+  useEffect(() => {
+    refreshUser().catch(() => {});
+  }, []);
+
   if (user?.role === 'manager') return <ManagerPourToi />;
   return <EmployeePourToi />;
 }
@@ -856,6 +899,7 @@ function EmployeePourToi() {
   const [loading, setLoading]           = useState(true);
   const [redeeming, setRedeeming]       = useState<string | null>(null);
   const [promoCodes, setPromoCodes]     = useState<Record<string, string>>({});
+  const [myTeam, setMyTeam]             = useState<{ team_name: string; manager: User } | null>(null);
   const { isFavorite, toggle }          = useFavorites();
   const { isInCart, toggle: cartToggle } = useCart();
 
@@ -865,6 +909,7 @@ function EmployeePourToi() {
       marketplaceService.getItems().then(setVouchers).catch(() => {}),
       marketplaceService.getOrders().then(setOrders).catch(() => {}),
       userService.getHistory(user.id).then(setTransactions).catch(() => {}),
+      userService.getMyTeam().then(setMyTeam).catch(() => {}),
     ]).finally(() => setLoading(false));
   }, [user?.id]);
 
@@ -981,11 +1026,31 @@ function EmployeePourToi() {
         />
       )}
 
+      {/* ══ Mon équipe ══ */}
+      {myTeam && (
+        <div className="card" style={{ marginBottom: 24, marginTop: 60, background: '#fefce8', borderColor: '#fef08a' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 16 }}>{myTeam.team_name}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--border)' }}>
+              <img
+                src={`/assets/av_${resolveAvatarIndex(myTeam.manager)}.png`}
+                alt={myTeam.manager.first_name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+              />
+            </div>
+            <div>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Mon manager</p>
+              <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>{myTeam.manager.first_name} {myTeam.manager.name}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══ Feedback instantané ══ */}
-      <div style={{ marginBottom: 32, marginTop: 60 }}>
+      <div style={{ marginBottom: 32, marginTop: 64 }}>
         <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 16 }}>Feedback instantané</h2>
         {recentReceived.length === 0 ? (
-          <div className="card" style={{ padding: '20px', textAlign: 'center' }}>
+          <div className="card" style={{ padding: '20px', textAlign: 'center', background: '#f0fdf4', borderColor: '#bbf7d0' }}>
             <p className="empty-state">Vous n'avez pas encore reçu de tokens récemment.</p>
           </div>
         ) : (
@@ -996,7 +1061,7 @@ function EmployeePourToi() {
                 : "prim'O";
               return (
                 <div key={tx.id} style={{
-                  background: '#ffffff', borderRadius: '16px', padding: '16px 20px',
+                  background: '#f0fdf4', borderRadius: '16px', padding: '16px 20px', border: '1px solid #bbf7d0',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 16
                 }}>
                   <div style={{
@@ -1027,13 +1092,13 @@ function EmployeePourToi() {
       <div style={{ marginBottom: 28 }}>
         <h2 className="carousel-title" style={{ marginBottom: 12 }}>Mes bons d'achat</h2>
         {orders.length === 0 ? (
-          <div className="card">
+          <div className="card" style={{ background: '#fff1f1', borderColor: '#fecaca' }}>
             <p className="empty-state">Tu n'as pas encore racheté de bon.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {orders.map((order) => (
-              <div key={order.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px' }}>
+              <div key={order.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#fff1f1', borderColor: '#fecaca' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 2 }}>{order.voucher?.partner ?? '—'}</p>
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{order.voucher?.title ?? '—'}</p>

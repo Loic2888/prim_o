@@ -262,7 +262,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Donner des tokens */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#f0fdf4', borderColor: '#bbf7d0' }}>
         <h2 style={{ marginBottom: 16, fontSize: '1rem', fontWeight: 600 }}>🪙 Donner des tokens</h2>
         <form onSubmit={handleGrantTokens}>
           <div className="grid-2" style={{ marginBottom: 12 }}>
@@ -302,7 +302,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Déduction de tokens */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#fff1f1', borderColor: '#fecaca' }}>
         <h2 style={{ marginBottom: 16, fontSize: '1rem', fontWeight: 600 }}>🔻 Déduire des tokens</h2>
         
         {/* Tabs cible */}

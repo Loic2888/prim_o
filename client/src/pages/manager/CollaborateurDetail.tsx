@@ -94,7 +94,7 @@ export default function CollaborateurDetail() {
       </div>
 
       {/* Informations */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#f0fdf4', borderColor: '#bbf7d0' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>Informations</h2>
         <div className="info-card-list">
           {[
@@ -113,7 +113,7 @@ export default function CollaborateurDetail() {
       </div>
 
       {/* Date d'entrée */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#fff1f1', borderColor: '#fecaca' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>
           Date d'entrée
         </h2>
@@ -166,7 +166,7 @@ export default function CollaborateurDetail() {
       </div>
 
       {/* Historique */}
-      <div className="card">
+      <div className="card" style={{ background: '#fefce8', borderColor: '#fef08a' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>Historique des tokens</h2>
         {history.length === 0 ? (
           <p className="empty-state">Aucune transaction.</p>

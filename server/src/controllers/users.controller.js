@@ -6,7 +6,7 @@
  * except getPendingUsers and updateEntryDate which perform their DB queries inline.
  */
 const usersService = require('../services/users.service');
-const { User } = require('../models');
+const { User, Team, TeamMember } = require('../models');
 
 /** Returns users filtered by optional query parameters role and companyId. */
 const list = async (req, res, next) => {
@@ -131,6 +131,38 @@ const updateEntryDate = async (req, res, next) => {
   }
 };
 
+/** Returns the team and manager for the currently authenticated employee. */
+const getMyTeam = async (req, res, next) => {
+  try {
+    const membership = await TeamMember.findOne({
+      where: { user_id: req.user.id, left_at: null },
+      include: [
+        {
+          model: Team,
+          as: 'team',
+          where: { dissolved_at: null },
+          required: true,
+          include: [{ model: User, as: 'manager', attributes: ['id', 'first_name', 'name', 'email', 'avatar_index'] }],
+        },
+      ],
+    });
+
+    if (!membership || membership.team.manager_id === req.user.id) {
+      return res.json({ success: true, data: null });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        team_name: membership.team.name,
+        manager: membership.team.manager,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 /** Updates the avatar_index for the currently authenticated user (self-only). */
 const updateAvatar = async (req, res, next) => {
   try {
@@ -150,6 +182,7 @@ module.exports = {
   getById,
   update,
   updateAvatar,
+  getMyTeam,
   remove,
   history,
   activateUser,

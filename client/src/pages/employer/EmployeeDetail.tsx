@@ -15,6 +15,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { userService } from "../../services/user.service";
 import { managerService } from "../../services/manager.service";
 import { tokenService } from "../../services/token.service";
+import { useAuth } from "../../context/AuthContext";
 import type { User, TokenTransaction } from "../../types";
 import { fmt } from "../../utils/date";
 
@@ -37,6 +38,8 @@ function IconArrowLeft() {
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
   const [employee, setEmployee] = useState<User | null>(null);
   const [history, setHistory] = useState<TokenTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +188,7 @@ export default function EmployeeDetail() {
       </div>
 
       {/* Informations */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#f0fdf4', borderColor: '#bbf7d0' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>
           Informations
         </h2>
@@ -205,7 +208,7 @@ export default function EmployeeDetail() {
       </div>
 
       {/* Date d'entrée*/}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#fff1f1', borderColor: '#fecaca' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>
           Date d'entrée
         </h2>
@@ -252,7 +255,7 @@ export default function EmployeeDetail() {
       </div>
 
       {/* Historique des transactions */}
-      <div className="card" style={{ marginBottom: 28 }}>
+      <div className="card" style={{ marginBottom: 28, background: '#fefce8', borderColor: '#fef08a' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>
           Historique des tokens
         </h2>
@@ -311,8 +314,8 @@ export default function EmployeeDetail() {
         )}
       </div>
 
-      {/* Zone promotion */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      {/* Zone promotion — masquée pour l'admin */}
+      {!isAdmin && <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 8 }}>
           Promouvoir en Manager
         </h2>
@@ -338,7 +341,7 @@ export default function EmployeeDetail() {
         >
           Promouvoir
         </button>
-      </div>
+      </div>}
 
       {/* Zone suppression */}
       <div

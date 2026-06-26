@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Fetches and stores the company record for the given user if they have a company_id. */
   async function fetchCompany(u: User) {
-    if ((u.role === 'employer' || u.role === 'employee') && u.company_id) {
+    if ((u.role === 'employer' || u.role === 'employee' || u.role === 'manager') && u.company_id) {
       try {
         const c = await companyService.getById(u.company_id);
         setCompany(c);
@@ -120,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function refreshUser(): Promise<void> {
     const u = await authService.me();
     setUser(u);
+    await fetchCompany(u);
   }
 
   /**

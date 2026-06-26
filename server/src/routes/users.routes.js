@@ -114,4 +114,6 @@ router.patch(
   usersController.updateEntryDate
 );
 
+router.get('/me/team', verifyToken, usersController.getMyTeam);
+
 module.exports = router;

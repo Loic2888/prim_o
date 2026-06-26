@@ -142,7 +142,7 @@ export default function TopNav() {
         </nav>
 
         {/* Droite : balance tokens */}
-        {user && !isPourToi && (
+        {user && !isPourToi && !isAdmin && (
           <div className="top-nav-right">
             <div className={`top-bar-tokens ${isManager ? 'top-bar-tokens--large' : ''}`}>
               <img src="/icons/token-logo-SF.png" alt="Token" style={{ width: 24, height: 24, objectFit: 'contain' }} />

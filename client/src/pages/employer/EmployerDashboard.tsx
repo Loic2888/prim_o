@@ -34,7 +34,7 @@ import { MOTIFS_ALLOCATION } from "../../utils/motifs";
 import { managerService } from "../../services/manager.service";
 import type { Team } from "../../types";
 import AvatarPickerModal from "../../components/AvatarPickerModal";
-import { getStoredAvatar, saveAvatar } from "../../utils/avatar";
+import { getStoredAvatar, saveAvatar, resolveAvatarIndex } from "../../utils/avatar";
 import { marketplaceService } from "../../services/marketplace.service";
 
 const EMPTY_FORM = { first_name: "", name: "", email: "", password: "" };
@@ -385,7 +385,7 @@ export default function EmployerDashboard() {
             onClick={() => setActiveTab('managers')}
           >
             <p style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0, color: activeTab === 'managers' ? "var(--primary)" : "inherit" }}>{managers.length}</p>
-            <p style={{ fontSize: "0.75rem", color: activeTab === 'managers' ? "var(--primary)" : "var(--text-muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px" }}>Équipe{managers.length !== 1 ? "s" : ""}</p>
+            <p style={{ fontSize: "0.75rem", color: activeTab === 'managers' ? "var(--primary)" : "var(--text-muted)", margin: 0, textTransform: "uppercase", letterSpacing: "0.5px" }}>Manager{managers.length !== 1 ? "s" : ""}</p>
           </div>
           <div 
             style={{ flex: 1, padding: "10px", background: activeTab === 'employees' ? "var(--primary-light, rgba(16, 185, 129, 0.1))" : "var(--bg)", borderRadius: "var(--radius)", textAlign: "center", border: activeTab === 'employees' ? "1px solid var(--primary)" : "1px solid var(--border)", cursor: "pointer", transition: "all 0.2s" }}
@@ -406,7 +406,6 @@ export default function EmployerDashboard() {
                   <tr>
                     <th style={{ padding: "7px 10px" }}>Nom</th>
                     <th style={{ padding: "7px 10px" }}>Rôle</th>
-                    <th style={{ padding: "7px 10px" }}>Date d'entrée</th>
                     <th style={{ padding: "7px 10px", textAlign: "right" }}>Tokens</th>
                   </tr>
                 </thead>
@@ -418,13 +417,15 @@ export default function EmployerDashboard() {
                       style={{ cursor: "pointer" }}
                     >
                       <td style={{ fontWeight: 500, padding: "8px 10px" }}>
-                        {mgr.first_name} {mgr.name}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--border)' }}>
+                            <img src={`/assets/av_${resolveAvatarIndex(mgr)}.png`} alt={mgr.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
+                          </div>
+                          {mgr.first_name} {mgr.name}
+                        </div>
                       </td>
                       <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>
                         {mgr.role ? (mgr.role === 'employee' ? 'Collaborateur' : mgr.role === 'employer' ? 'Employeur' : mgr.role.charAt(0).toUpperCase() + mgr.role.slice(1)) : '—'}
-                      </td>
-                      <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>
-                        {fmtShort(mgr.entry_date)}
                       </td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>
                         <span className="token-badge">{mgr.token_balance}</span>
@@ -444,8 +445,7 @@ export default function EmployerDashboard() {
                 <thead>
                   <tr>
                     <th style={{ padding: "7px 10px" }}>Nom</th>
-                    <th style={{ padding: "7px 10px" }}>Équipe</th>
-                    <th style={{ padding: "7px 10px" }}>Date d'entrée</th>
+                    <th style={{ padding: "7px 10px" }}>Manager</th>
                     <th style={{ padding: "7px 10px", textAlign: "right" }}>Tokens</th>
                   </tr>
                 </thead>
@@ -458,16 +458,18 @@ export default function EmployerDashboard() {
                       style={{ cursor: "pointer" }}
                     >
                       <td style={{ fontWeight: 500, padding: "8px 10px" }}>
-                        {emp.first_name} {emp.name}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--border)' }}>
+                            <img src={`/assets/av_${resolveAvatarIndex(emp)}.png`} alt={emp.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
+                          </div>
+                          {emp.first_name} {emp.name}
+                        </div>
                       </td>
                       <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>
                         {(() => {
                           const team = teams.find(t => t.members?.some(m => m.user_id === emp.id)) as any;
                           return team?.manager ? `${team.manager.first_name} ${team.manager.name}` : "—";
                         })()}
-                      </td>
-                      <td style={{ color: "var(--text-muted)", padding: "8px 10px", fontSize: "0.82rem" }}>
-                        {fmtShort(emp.entry_date)}
                       </td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>
                         <span className="token-badge">{emp.token_balance}</span>
@@ -483,7 +485,7 @@ export default function EmployerDashboard() {
 
       {/* Feedback feed */}
       {company && (
-        <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card" style={{ marginBottom: 24, background: '#fefce8', borderColor: '#fef08a' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
             <div>
               <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: 4 }}>
@@ -556,7 +558,7 @@ export default function EmployerDashboard() {
       )}
 
       {/* Attributions automatiques */}
-      <div className="card" style={{ marginBottom: 24 }}>
+      <div className="card" style={{ marginBottom: 24, background: '#f0fdf4', borderColor: '#bbf7d0' }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: schedRules.length > 0 ? 16 : 0 }}>
           <div>
             <p style={{ fontWeight: 600, fontSize: "0.95rem" }}>Attributions automatiques</p>
@@ -646,11 +648,11 @@ export default function EmployerDashboard() {
       <div style={{ marginBottom: 28 }}>
         <h2 className="carousel-title" style={{ marginBottom: 12 }}>Mes bons d'achat</h2>
         {orders.length === 0 ? (
-          <div className="card"><p className="empty-state">Tu n'as pas encore racheté de bon.</p></div>
+          <div className="card" style={{ background: '#fefce8', borderColor: '#fef08a' }}><p className="empty-state">Tu n'as pas encore racheté de bon.</p></div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {orders.map((order) => (
-              <div key={order.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px' }}>
+              <div key={order.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: '#fefce8', borderColor: '#fef08a' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 2 }}>{order.voucher?.partner ?? '—'}</p>
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{order.voucher?.title ?? '—'}</p>

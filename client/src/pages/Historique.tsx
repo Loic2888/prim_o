@@ -185,7 +185,7 @@ export default function Historique() {
 
       {/* Unified Personal Timeline (Employee or Manager on personal tab) */}
       {(user?.role === 'employee' || (user?.role === 'manager' && tab === 'perso')) && (
-        <div className="card" style={{ marginTop: 16 }}>
+        <div className="card" style={{ marginTop: 16, background: '#fefce8', borderColor: '#fef08a' }}>
           {personalTimeline.length === 0 ? (
             <p className="empty-state">Aucun historique disponible.</p>
           ) : (
@@ -238,7 +238,7 @@ export default function Historique() {
 
       {/* Unified Timeline (Employer or Manager on team tab) */}
       {(user?.role === 'employer' || (user?.role === 'manager' && tab === 'equipe')) && (
-        <div className="card" style={{ marginTop: 16 }}>
+        <div className="card" style={{ marginTop: 16, background: '#fefce8', borderColor: '#fef08a' }}>
           {managerTimeline.length === 0 ? (
             <p className="empty-state">Aucun historique d'équipe disponible.</p>
           ) : (

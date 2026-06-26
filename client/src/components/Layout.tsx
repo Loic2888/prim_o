@@ -61,7 +61,7 @@ export default function Layout({ children }: Props) {
             <span style={{ fontFamily: "'Pacifico', cursive", fontWeight: 400, fontSize: '4rem', color: 'var(--primary)', lineHeight: 1 }}>o</span>
           </span>
 
-          {user && (
+          {user && user.role !== 'admin' && (
             <div className="top-bar-right">
               <div className="top-bar-tokens top-bar-tokens--large">
                 <img src="/icons/token-logo-SF.png" alt="Token" style={{ width: 24, height: 24, objectFit: 'contain' }} />

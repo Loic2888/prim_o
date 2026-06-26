@@ -33,7 +33,8 @@ export default function ManagerDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { refreshCompany } = useAuth();
+  const { user: currentUser, refreshCompany } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
   const [manager, setManager] = useState<User | null>(null);
   const [team, setTeam] = useState<Team | null>(null);
   const [history, setHistory] = useState<TokenTransaction[]>([]);
@@ -212,7 +213,7 @@ export default function ManagerDetail() {
       </div>
 
       {/* Informations */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#f0fdf4', borderColor: '#bbf7d0' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>Informations</h2>
         <div className="info-card-list">
           {[
@@ -230,7 +231,7 @@ export default function ManagerDetail() {
       </div>
 
       {/* Date d'entrée */}
-      <div className="card" style={{ marginBottom: 20 }}>
+      <div className="card" style={{ marginBottom: 20, background: '#fff1f1', borderColor: '#fecaca' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>
           Date d'entrée
         </h2>
@@ -290,41 +291,32 @@ export default function ManagerDetail() {
         {teamMembers.length === 0 ? (
           <p className="empty-state">Aucun membre dans l'équipe.</p>
         ) : (
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Nom</th>
-                  <th>Email</th>
-                  <th style={{ textAlign: "right" }}>Tokens</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamMembers.map((m) => (
-                  <tr
-                    key={m.user_id}
-                    onClick={() => navigate(`/employer/employees/${m.user_id}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td style={{ fontWeight: 500 }}>
-                      {m.user?.first_name} {m.user?.name}
-                    </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
-                      {m.user?.email}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <span className="token-badge">{m.user?.token_balance ?? 0}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {teamMembers.map((m) => (
+              <div
+                key={m.user_id}
+                onClick={() => navigate(`/employer/employees/${m.user_id}`)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '8px 4px', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--border)' }}>
+                    <img
+                      src={`/assets/av_${m.user ? resolveAvatarIndex(m.user) : 1}.png`}
+                      alt={m.user?.first_name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
+                    />
+                  </div>
+                  <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{m.user?.first_name} {m.user?.name}</span>
+                </div>
+                <span className="token-badge">{m.user?.token_balance ?? 0}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
       {/* Historique des transactions */}
-      <div className="card" style={{ marginBottom: 28 }}>
+      <div className="card" style={{ marginBottom: 28, background: '#fefce8', borderColor: '#fef08a' }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 16 }}>Historique des tokens</h2>
         {history.length === 0 ? (
           <p className="empty-state">Aucune transaction.</p>
@@ -377,8 +369,8 @@ export default function ManagerDetail() {
         )}
       </div>
 
-      {/* Zone rétrogradation */}
-      <div className="card" style={{ borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.02)" }}>
+      {/* Zone rétrogradation — masquée pour l'admin */}
+      {!isAdmin && <div className="card" style={{ borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.02)" }}>
         <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: 8, color: "var(--danger)" }}>
           Rétrograder en collaborateur
         </h2>
@@ -408,7 +400,7 @@ export default function ManagerDetail() {
             </div>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* ══ Quick send modal ══ */}
       {quickTarget && (

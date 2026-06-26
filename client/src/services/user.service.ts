@@ -58,4 +58,9 @@ export const userService = {
   async updateAvatar(id: string, avatar_index: number): Promise<void> {
     await api.patch(`/users/${id}/avatar`, { avatar_index });
   },
+
+  async getMyTeam(): Promise<{ team_name: string; manager: User } | null> {
+    const { data } = await api.get<ApiResponse<{ team_name: string; manager: User } | null>>('/users/me/team');
+    return data.data;
+  },
 };
