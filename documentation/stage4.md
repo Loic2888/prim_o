@@ -41,9 +41,18 @@ Structure development into four focused sprints, each with a clear scope and del
 - **Duration :** ~1–2 weeks per sprint.
 - **Tools :** GitHub Projects for issue tracking, GitHub Flow for SCM, Postman for API validation.
 - **Roles :** 
-  - **Loïc :** Backend architecture, API, security, DevOps (Render deployment).
-  - **Véronique :** Frontend (React/TypeScript), UX, Vercel deployment.
+  - **Loïc :** Backend architecture, API, security, DevOps (Render deployment), Vercel deployment, UX.
+  - **Véronique :** Backend, Database, Frontend (React/TypeScript), UX.
 - **Merge policy :** All work goes through `feature/*` or `dev` branches, reviewed via PR before merging into `main`. No direct pushes to `main`.
+
+### Sprint Planning (MVP Execution)
+
+| Sprint | Period | Objective (Focus) | Priorities (MoSCoW) | Responsibility |
+| :--- | :--- | :--- | :--- | :--- |
+| **S1** | 05/11 - 05/25 | **Design & Doc** | Must Have: Architecture, User Stories | Loïc & Véro |
+| **S2** | 05/26 - 06/15 | **Backend Development** | Must Have: API, Database | Loïc & Véro |
+| **S3** | 06/16 - 06/26 | **Testing & Quality** | Must Have: Jest, Supertest, Unit Tests | Loïc & Véro |
+| **S4** | 06/27 - 07/15 | **MVP Finalization** | Must Have: Polish, UI/UX, Deployment | Loïc & Véro |
 
 ---
 
