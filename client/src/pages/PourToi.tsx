@@ -417,8 +417,17 @@ function ManagerPourToi() {
           {/* Right — coin + token count window */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, transform: 'translateY(35px)' }}>
             {team?.name && (
-              <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.2rem', marginBottom: 4, letterSpacing: '0.02em', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                {team.name}
+              <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '1.2rem', lineHeight: 1.2, textAlign: 'center', marginBottom: 4, letterSpacing: '0.02em', textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+                {/* « Équipe de Sophie Martin » → L1 « Équipe », L2 « de Sophie Martin » (évite le chevauchement avec l'avatar sur mobile) */}
+                {/^Équipe\s+\S/.test(team.name) ? (
+                  <>
+                    Équipe
+                    <br />
+                    {team.name.replace(/^Équipe\s+/, '')}
+                  </>
+                ) : (
+                  team.name
+                )}
               </span>
             )}
             {/* Token Image from client/public/icons */}
