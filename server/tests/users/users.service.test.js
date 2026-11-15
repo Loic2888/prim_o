@@ -166,6 +166,20 @@ describe('remove', () => {
     ).rejects.toMatchObject({ status: 404 });
   });
 
+  it("never deletes a user of another company (employer A cannot delete a user of company B)", async () => {
+    // The lookup is scoped by the requester's company, so a user of company B is simply not found.
+    User.findOne.mockResolvedValue(null);
+
+    await expect(
+      remove('user-of-company-b', { role: 'employer', company_id: 'company-a' })
+    ).rejects.toMatchObject({ status: 404 });
+
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { id: 'user-of-company-b', company_id: 'company-a' },
+    });
+    expect(User.findByPk).not.toHaveBeenCalledWith('user-of-company-b');
+  });
+
   it('throws 403 when an employer targets another employer', async () => {
     const user = { ...fakeUser, role: 'employer', destroy: jest.fn() };
     User.findOne.mockResolvedValue(user);
