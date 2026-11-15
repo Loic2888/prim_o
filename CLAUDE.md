@@ -126,7 +126,7 @@ changes need a migration in `/migrations` (sequelize-cli, configured via `server
 Full contract: [documentation/stage3.md](documentation/stage3.md). Summary (guards in brackets):
 
 - **auth** — `POST /register`, `POST /login` (rate-limited), `POST /refresh`, `POST /logout` [auth], `GET /me` [auth]
-- **users** — `GET /` & `GET /pending` [employer, admin], `GET /me/team`, `GET|PUT /:id`, `DELETE /:id` [employer (own company), admin],
+- **users** — `GET /` & `GET /pending` [employer, admin], `GET /me/team`, `GET /me/export` [auth, own data only], `GET|PUT /:id`, `DELETE /:id` [employer (own company), admin],
   `GET /:id/history`, `PATCH /:id/activate` [employer, admin], `PATCH /:id/password`, `PATCH /:id/avatar`, `PATCH /:id/entry-date` [employer, admin, manager]
 - **tokens** — `POST /allocate` [employer], `GET /balance/:userId`, `GET /transactions`, `GET /transactions/:id`,
   `POST /admin/deduct` [admin], `POST /subscribe` & `GET /subscription` [employer], `POST /webhook` [public, Stripe signature]

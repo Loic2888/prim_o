@@ -8,6 +8,12 @@ import api from "./api";
 import type { User, TokenTransaction, ApiResponse } from "../types";
 
 export const userService = {
+  /** GDPR portability: the connected user's own data (profile, transactions, redemptions, favourites). */
+  async exportMyData(): Promise<Record<string, unknown>> {
+    const { data } = await api.get<ApiResponse<Record<string, unknown>>>("/users/me/export");
+    return data.data;
+  },
+
   getAll: (params: { companyId?: string; role?: string }) => {
     return api.get("/users", { params });
   },

@@ -9,6 +9,7 @@
  * GET    /:id/history   — any authenticated user; token transaction history
  * PATCH  /:id/activate  — employer or admin; activate a pending employee
  * PATCH  /:id/entry-date — employer or admin; update an employee's entry date
+ * GET    /me/export     — any authenticated user; export own data (GDPR portability)
  */
 const { Router } = require('express');
 const { param, query, body } = require('express-validator');
@@ -147,5 +148,8 @@ router.patch(
 );
 
 router.get('/me/team', verifyToken, usersController.getMyTeam);
+
+// GDPR portability: the connected user's own data only (id taken from the JWT)
+router.get('/me/export', verifyToken, usersController.exportMyData);
 
 module.exports = router;

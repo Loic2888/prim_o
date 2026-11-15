@@ -140,6 +140,20 @@ const updateEntryDate = async (req, res, next) => {
 };
 
 /** Returns the team and manager for the currently authenticated employee. */
+/**
+ * Returns the connected user's own data (profile, transactions, redemptions, favourites) for
+ * GDPR portability. The id always comes from the verified JWT, never from the URL or the body.
+ */
+const exportMyData = async (req, res, next) => {
+  try {
+    const data = await usersService.exportData(req.user.id);
+    res.set('Cache-Control', 'no-store');
+    res.json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getMyTeam = async (req, res, next) => {
   try {
     const membership = await TeamMember.findOne({
@@ -201,6 +215,7 @@ module.exports = {
   update,
   updateAvatar,
   getMyTeam,
+  exportMyData,
   remove,
   history,
   activateUser,
