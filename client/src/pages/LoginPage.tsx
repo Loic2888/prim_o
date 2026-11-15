@@ -9,9 +9,16 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 export default function LoginPage() {
   const { login, isAuthenticated, isLoading, user } = useAuth();
+  usePageMeta({
+    title: "Connexion | PRIM'O",
+    description: "Connectez-vous à votre espace PRIM'O pour attribuer ou échanger vos jetons de reconnaissance.",
+    indexable: true,
+    canonicalPath: "/login",
+  });
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

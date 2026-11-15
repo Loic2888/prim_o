@@ -1,0 +1,21 @@
+# Pages publiques : /, /login, /register. Tout le reste demande une connexion.
+# Les fichiers /assets et /icons ne sont pas bloqués : les moteurs en ont besoin pour afficher l'application.
+User-agent: *
+Disallow: /admin
+Disallow: /employer
+Disallow: /manager
+Disallow: /catalogue
+Disallow: /pour-toi
+Disallow: /profil
+Disallow: /parametres
+Disallow: /historique
+Disallow: /panier
+Disallow: /service
+Disallow: /mes-informations
+Disallow: /mot-de-passe
+Disallow: /abonnement
+Disallow: /avis
+Disallow: /faq
+Disallow: /cgu
+
+Sitemap: https://prim-o.vercel.app/sitemap.xml
