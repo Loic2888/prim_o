@@ -141,6 +141,9 @@ export default function LoginPage() {
         <p className="auth-footer">
           Pas encore de compte ? <Link to="/register">Créer un compte</Link>
         </p>
+        <p className="auth-footer">
+          <Link to="/cgu">CGU</Link> · <Link to="/confidentialite">Politique de confidentialité</Link>
+        </p>
       </div>
     </div>
   );

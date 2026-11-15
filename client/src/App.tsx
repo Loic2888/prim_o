@@ -50,6 +50,7 @@ import Service from './pages/Service';
 import Abonnement from './pages/Abonnement';
 import MotDePasse from './pages/MotDePasse';
 import CGU from './pages/CGU';
+import Confidentialite from './pages/Confidentialite';
 import Avis from './pages/Avis';
 import MesInformations from './pages/MesInformations';
 import FAQ from './pages/FAQ';
@@ -82,6 +83,15 @@ function Wrap({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Wraps a public page that is also reachable from the connected app (CGU, privacy policy):
+ * anonymous visitors get the bare page, authenticated users keep the navigation shell.
+ */
+function MaybeLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  return user ? <Layout>{children}</Layout> : <>{children}</>;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -92,6 +102,8 @@ export default function App() {
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/cgu" element={<MaybeLayout><CGU /></MaybeLayout>} />
+            <Route path="/confidentialite" element={<MaybeLayout><Confidentialite /></MaybeLayout>} />
 
           {/* Employer-only */}
           <Route path="/employer/dashboard" element={
@@ -190,7 +202,6 @@ export default function App() {
             <Route path="/faq"              element={<Wrap><FAQ /></Wrap>} />
             <Route path="/pour-toi"        element={<Wrap><PourToi /></Wrap>} />
             <Route path="/mot-de-passe" element={<Wrap><MotDePasse /></Wrap>} />
-            <Route path="/cgu"          element={<Wrap><CGU /></Wrap>} />
             <Route path="/avis"         element={<Wrap><Avis /></Wrap>} />
             <Route path="/abonnement" element={
               <ProtectedRoute allowedRoles={['employer']}>
