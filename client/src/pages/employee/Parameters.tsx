@@ -73,10 +73,31 @@ export default function Parameters() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
 
   function handleLang(l: 'fr' | 'en') {
     setLang(l);
     localStorage.setItem('pref_lang', l);
+  }
+
+  /** Downloads the user's own data as a JSON file (droit à la portabilité, art. 12.5 des CGU). */
+  async function handleExport() {
+    setExporting(true);
+    setExportError('');
+    try {
+      const data = await userService.exportMyData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `primo-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("Impossible de télécharger vos données. Réessayez dans un instant.");
+    }
+    setExporting(false);
   }
 
   async function handleDelete() {
@@ -199,6 +220,20 @@ export default function Parameters() {
                 English
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Data export (GDPR portability) */}
+        <div className="param-card">
+          <div className="param-row">
+            <div className="param-info">
+              <span className="param-label">Mes données</span>
+              <span className="param-desc">Téléchargez votre profil, vos transactions, vos rachats et vos favoris (fichier JSON)</span>
+              {exportError && <span className="param-desc" role="alert" style={{ color: '#dc2626' }}>{exportError}</span>}
+            </div>
+            <button className="param-lang-btn param-lang-btn--active" onClick={handleExport} disabled={exporting}>
+              {exporting ? 'Préparation…' : 'Télécharger mes données'}
+            </button>
           </div>
         </div>
 

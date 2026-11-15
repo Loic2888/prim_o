@@ -9,7 +9,7 @@
  * All queries that return user data exclude the password_hash column.
  */
 const { Op } = require('sequelize');
-const { User, TokenTransaction } = require('../models');
+const { User, TokenTransaction, Redemption, Favorite, Voucher } = require('../models');
 
 const httpError = (message, status) => {
   const err = new Error(message);
@@ -184,4 +184,53 @@ const changePassword = async (id, { current_password, password }) => {
   await user.save();
 };
 
-module.exports = { list, getById, update, updateAvatar, remove, history, activateUser, changePassword };
+/**
+ * GDPR portability (art. 20): returns everything the platform holds about the connected user and
+ * nothing else — profile, token transactions, voucher redemptions and favourites. userId is the
+ * authenticated user's own id (never taken from the request). The password hash is never selected,
+ * transaction counterparts are exposed as ids only (no name or email of another person), and
+ * DECIMAL amounts are converted with parseFloat() because pg returns them as strings.
+ * Throws 404 if the account no longer exists.
+ */
+const exportData = async (userId) => {
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'name', 'first_name', 'email', 'role', 'status', 'entry_date', 'avatar_index', 'token_balance', 'company_id', 'created_at'],
+  });
+  if (!user) throw httpError('User not found', 404);
+
+  const [transactions, redemptions, favorites] = await Promise.all([
+    TokenTransaction.findAll({
+      where: { [Op.or]: [{ sender_id: userId }, { receiver_id: userId }] },
+      attributes: ['id', 'sender_id', 'receiver_id', 'amount', 'type', 'reason', 'created_at'],
+      order: [['created_at', 'DESC']],
+    }),
+    Redemption.findAll({
+      where: { user_id: userId },
+      attributes: ['id', 'promo_code', 'created_at'],
+      include: [{ model: Voucher, as: 'voucher', attributes: ['title', 'partner', 'token_cost'] }],
+      order: [['created_at', 'DESC']],
+    }),
+    Favorite.findAll({
+      where: { user_id: userId },
+      attributes: ['id', 'created_at'],
+      include: [{ model: Voucher, as: 'voucher', attributes: ['title', 'partner'] }],
+      order: [['created_at', 'DESC']],
+    }),
+  ]);
+
+  const profile = user.toJSON();
+  profile.token_balance = parseFloat(profile.token_balance);
+
+  return {
+    exported_at: new Date().toISOString(),
+    profile,
+    transactions: transactions.map((t) => {
+      const row = t.toJSON();
+      return { ...row, amount: parseFloat(row.amount), direction: row.sender_id === userId ? 'sent' : 'received' };
+    }),
+    redemptions: redemptions.map((r) => r.toJSON()),
+    favorites: favorites.map((f) => f.toJSON()),
+  };
+};
+
+module.exports = { list, getById, update, updateAvatar, remove, history, activateUser, changePassword, exportData };

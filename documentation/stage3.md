@@ -305,6 +305,7 @@ This section details how PRIM'O connects and communicates with different service
 | `PUT` | `/api/users/:id` | Update user profile | `{ "email"?, "password"?, "name"? }` | `{ "id": "integer", "email", "name" }` |
 | `DELETE` | `/api/users/:id` | Delete a user | (params : `id`) | `{ "message": "User deleted" }` |
 | `GET` | `/api/users/:id/history` | Get token activity history | (params : `id`) | `[ { "type", "amount": "integer", "date", "description" } ]` |
+| `GET` | `/api/users/me/export` | GDPR portability: export the connected user's own data (profile, transactions, redemptions, favourites). Never includes `password_hash` nor another person's data; the identity comes from the JWT | — | `{ "success": true, "data": { "exported_at", "profile": {}, "transactions": [ { "amount": "number", "direction": "sent\|received" } ], "redemptions": [], "favorites": [] } }` |
 
 ---
 
