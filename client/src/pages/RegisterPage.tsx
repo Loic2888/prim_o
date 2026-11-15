@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { companyService } from "../services/company.service";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 type Role = "employer" | "employee";
 
@@ -25,6 +26,14 @@ export default function RegisterPage() {
   const [searchParams] = useSearchParams();
 
   const qrCompanyId = searchParams.get("companyId") ?? "";
+
+  // Le lien du QR code est propre à une entreprise : on ne l'indexe pas, seul /register nu l'est.
+  usePageMeta({
+    title: "Inscription | PRIM'O",
+    description: "Créez votre compte PRIM'O : employeur, pour récompenser vos équipes, ou collaborateur, pour recevoir et échanger vos jetons.",
+    indexable: !qrCompanyId,
+    canonicalPath: "/register",
+  });
 
   const [role, setRole] = useState<Role>(qrCompanyId ? "employee" : "employee");
   const [firstName, setFirstName] = useState("");

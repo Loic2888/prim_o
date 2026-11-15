@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import TopNav from './TopNav';
 import BottomNav from './BottomNav';
 import { formatTokens } from '../utils/tokens';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 interface Props {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ export default function Layout({ children }: Props) {
   const { user, company } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  usePageMeta({ indexable: false });
 
   const isHeroPage = location.pathname === '/login' || HERO_PAGES.includes(location.pathname);
   const isPourToi = location.pathname === '/pour-toi' || location.pathname === '/employer/dashboard';

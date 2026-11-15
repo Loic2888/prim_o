@@ -8,9 +8,11 @@
  */
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  usePageMeta({ indexable: true, canonicalPath: '/' });
 
   if (isLoading) return null;
 
