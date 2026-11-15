@@ -19,7 +19,7 @@
 | **Vercel** | Diffusion des fichiers statiques du front (React) | Aucune donnée de compte : seuls les fichiers de l'application et les journaux d'accès techniques | États-Unis par défaut | À confirmer : DPA accepté dans le compte Vercel |
 | **Stripe** | Encaissement des abonnements des employeurs | Identité de l'employeur et de l'entreprise, données de carte (saisies uniquement dans Stripe.js) | Union européenne et États-Unis | À confirmer : DPA Stripe accepté |
 
-La base `primo-db` a été recréée à Francfort le 13/11/2026. La région du service `primo-api` n'a pas été vérifiée : voir T-96 (`region: frankfurt` dans `render.yaml`).
+La base `primo-db` a été recréée à Francfort en novembre 2026. La région du service `primo-api` n'a pas été vérifiée : voir T-96 (`region: frankfurt` dans `render.yaml`).
 
 ## Traitement 1 — Comptes utilisateurs
 
