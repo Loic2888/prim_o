@@ -3,6 +3,7 @@ databases:
     databaseName: primo
     user: primo
     plan: free
+    region: frankfurt        # RGPD : données hébergées dans l'UE (la région ne se change pas après création)
 
 services:
   # ── Backend API (Node.js / Express) ──────────────────────────
@@ -13,6 +14,7 @@ services:
     dockerContext: ./server
     dockerBuildTarget: production
     plan: free
+    region: frankfurt        # même région que la base (latence et RGPD)
     envVars:
       - key: NODE_ENV
         value: production
@@ -39,6 +41,8 @@ services:
 
   # ── Frontend React (build statique → Vercel recommandé) ──────
   # Le frontend est déployé sur Vercel — voir client/.env.example
+  # Fichiers statiques seulement (aucune fonction serverless, donc pas de région à fixer
+  # dans vercel.json) : aucune donnée de compte n'y est stockée.
   # Si tu veux tout héberger sur Render, décommente le bloc ci-dessous :
   #
   # - type: web
