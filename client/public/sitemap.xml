@@ -9,4 +9,10 @@
   <url>
     <loc>https://prim-o.vercel.app/register</loc>
   </url>
+  <url>
+    <loc>https://prim-o.vercel.app/cgu</loc>
+  </url>
+  <url>
+    <loc>https://prim-o.vercel.app/confidentialite</loc>
+  </url>
 </urlset>

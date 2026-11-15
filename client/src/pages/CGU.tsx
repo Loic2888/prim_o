@@ -7,7 +7,8 @@
  * as paragraphs split on double newlines. Article numbers and titles form a readable heading
  * hierarchy. The contact section mirrors the one in FAQ.
  */
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 function IconMail() {
   return (
@@ -275,16 +276,22 @@ Conformément aux articles L611-1 et suivants du Code de la consommation, l'Util
 ];
 
 export default function CGU() {
+  usePageMeta({
+    title: "CGU — CGV | PRIM'O",
+    description: "Conditions Générales d'Utilisation et de Vente de la plateforme PRIM'O.",
+    indexable: true,
+    canonicalPath: '/cgu',
+  });
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? '/';
+  const from = (location.state as { from?: string } | null)?.from;
 
   return (
     <div>
       {/* Sticky top bar */}
       <div className="faq-topbar faq-topbar--clean" style={{ justifyContent: 'space-between' }}>
         <h1 className="faq-topbar-title">CGU — CGV</h1>
-        <button className="back-btn" onClick={() => navigate(from, { state: { reopenMenu: true } })}>
+        <button className="back-btn" onClick={() => (from ? navigate(from, { state: { reopenMenu: true } }) : navigate(-1))}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -312,6 +319,10 @@ export default function CGU() {
         ))}
 
         <div className="cgu-footer">
+          <p style={{ marginBottom: 16 }}>
+            Pour savoir comment vos données sont utilisées, consultez la{' '}
+            <Link to="/confidentialite">Politique de confidentialité</Link>.
+          </p>
           <p style={{ marginBottom: 16 }}>
             Pour toute question relative aux présentes CGU-CGV, contactez-nous :
           </p>

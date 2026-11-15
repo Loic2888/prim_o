@@ -1,4 +1,4 @@
-# Pages publiques : /, /login, /register. Tout le reste demande une connexion.
+# Pages publiques : /, /login, /register, /cgu, /confidentialite. Tout le reste demande une connexion.
 # Les fichiers /assets et /icons ne sont pas bloqués : les moteurs en ont besoin pour afficher l'application.
 User-agent: *
 Disallow: /admin
@@ -16,6 +16,5 @@ Disallow: /mot-de-passe
 Disallow: /abonnement
 Disallow: /avis
 Disallow: /faq
-Disallow: /cgu
 
 Sitemap: https://prim-o.vercel.app/sitemap.xml

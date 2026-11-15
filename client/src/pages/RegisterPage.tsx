@@ -358,6 +358,12 @@ export default function RegisterPage() {
 
           {error && <p className="form-error">{error}</p>}
 
+          <p className="auth-footer" style={{ marginBottom: 12 }}>
+            PRIM'O utilise ces informations pour gérer votre compte et vos tokens. En créant un compte, vous acceptez les{" "}
+            <Link to="/cgu">CGU</Link> et reconnaissez avoir pris connaissance de la{" "}
+            <Link to="/confidentialite">Politique de confidentialité</Link>.
+          </p>
+
           <button
             type="submit"
             className="btn btn-primary btn-full"
