@@ -214,7 +214,7 @@ L'Éditeur de PRIM'O est responsable du traitement des données personnelles col
 Les données sont collectées pour la gestion des comptes utilisateurs, la fourniture des services, la sécurisation de la Plateforme et la communication relative au service.
 
 12.4 Durée de conservation
-Les données sont conservées pendant toute la durée d'activité du compte, puis pendant 3 ans après sa suppression, sauf obligation légale contraire.
+Les données personnelles sont conservées pendant toute la durée d'activité du compte. À la suppression du compte, elles sont effacées immédiatement : nom, prénom, adresse email, mot de passe et favoris. Les enregistrements comptables (attributions de tokens, rachats de bons) sont conservés sans lien avec votre identité, sauf obligation légale contraire.
 
 12.5 Droits des utilisateurs
 Conformément au RGPD, tout Utilisateur dispose des droits d'accès, de rectification, d'effacement, de portabilité, de limitation et d'opposition concernant ses données personnelles. Ces droits peuvent être exercés à l'adresse : support@primo.app
